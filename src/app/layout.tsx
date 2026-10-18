@@ -19,8 +19,6 @@ const pressStart = Press_Start_2P({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: '#00f0ff',
   viewportFit: 'cover',
 };

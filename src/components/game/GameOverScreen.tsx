@@ -167,7 +167,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md select-none animate-in fade-in duration-300 overflow-y-auto" style={{ minHeight: '100dvh' }}>
+    <div className="touch-scroll absolute inset-0 z-20 flex flex-col items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md select-none animate-in fade-in duration-300 overflow-y-auto" style={{ minHeight: '100dvh' }}>
       <div className="w-full max-w-md bg-slate-900/90 border border-slate-700/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-[0_0_50px_rgba(0,0,0,0.85)] flex flex-col items-center text-center my-auto">
         {/* Status Header */}
         <div className="text-xs font-mono font-bold tracking-widest text-red-400 uppercase mb-1">

@@ -110,9 +110,23 @@ canvas, button, div {
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
 /* Mobile landscape optimization */
 @media (max-height: 450px) and (orientation: landscape) {
   .start-screen-hero h1 {
     font-size: 2rem !important;
+  }
+
+  .start-screen-hero {
+    padding-block: 0 !important;
+  }
+
+  .start-screen-footer {
+    padding-top: 0.5rem !important;
   }
 }

@@ -59,7 +59,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="absolute inset-0 z-20 flex flex-col items-center justify-between p-3 sm:p-4 md:p-6 lg:p-8 bg-gradient-to-b from-slate-950/75 via-slate-900/60 to-slate-950/85 backdrop-blur-sm select-none overflow-y-auto animate-in fade-in duration-500"
+      className="touch-scroll absolute inset-0 z-20 flex flex-col items-center justify-between p-3 sm:p-4 md:p-6 lg:p-8 bg-gradient-to-b from-slate-950/75 via-slate-900/60 to-slate-950/85 backdrop-blur-sm select-none overflow-y-auto animate-in fade-in duration-500"
       style={{ minHeight: '100dvh' }}
     >
       {/* Top Header Row */}
@@ -102,7 +102,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
 
       {/* Hero Center Section with interactive parallax tilt */}
       <div
-        className="flex flex-col items-center text-center my-auto py-2 sm:py-3 max-w-xl transition-transform duration-200 ease-out w-full"
+        className="start-screen-hero flex flex-col items-center text-center my-auto py-2 sm:py-3 max-w-xl transition-transform duration-200 ease-out w-full"
         style={{
           transform: isMobile ? 'none' : `perspective(1000px) rotateY(${mousePos.x * 0.4}deg) rotateX(${-mousePos.y * 0.4}deg)`,
         }}
@@ -221,7 +221,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
       </div>
 
       {/* Bottom Stats Footer */}
-      <div className="w-full max-w-4xl pt-3 sm:pt-4 border-t border-slate-800/80 flex-shrink-0">
+      <div className="start-screen-footer w-full max-w-4xl pt-3 sm:pt-4 border-t border-slate-800/80 flex-shrink-0">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2.5 text-center">
           <div className="bg-slate-950/60 rounded-xl p-1.5 sm:p-2 border border-slate-800/60">
             <div className="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase">Personal Best</div>
@@ -255,6 +255,17 @@ export const StartScreen: React.FC<StartScreenProps> = ({
           {isMobile
             ? 'ROADSTER RUSH — Independent fan-made arcade game.'
             : 'ROADSTER RUSH is an independent fan-made creative arcade game celebrating electric hypercars and retro-pixel games. Not affiliated with or endorsed by Tesla.'}
+        </div>
+        <div className="mt-1 text-center text-[9px] sm:text-[10px] text-slate-500 font-mono">
+          Made by{' '}
+          <a
+            href="https://github.com/divyanshu-dee"
+            target="_blank"
+            rel="noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
+          >
+            divyanshu-dee
+          </a>
         </div>
       </div>
     </div>

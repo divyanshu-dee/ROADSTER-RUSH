@@ -23,7 +23,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md select-none animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-slate-900/95 border border-slate-700/80 rounded-3xl p-6 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-lg bg-slate-900/95 border border-slate-700/80 rounded-3xl p-4 sm:p-6 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col max-h-[90dvh]">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
@@ -47,7 +47,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Settings Body */}
-        <div className="flex flex-col gap-4 my-4 overflow-y-auto pr-1 py-1">
+        <div className="touch-scroll flex flex-col gap-4 my-4 overflow-y-auto pr-1 py-1">
           {/* Graphics Preset */}
           <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col gap-2.5">
             <div className="flex items-center gap-2 text-xs font-bold font-mono text-cyan-400 uppercase tracking-wider">

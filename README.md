@@ -95,10 +95,16 @@ npm run build
 
 1. Push your repository to **GitHub**:
    ```bash
-   git push -u origin master
+   git push -u origin main
    ```
 2. Import repository in [Vercel](https://vercel.com/new).
 3. Framework Preset: **Next.js**
 4. Build Command: `npm run build`
 5. Output Directory: `.next`
 6. Click **Deploy**!
+
+---
+
+## Credits
+
+Made by [divyanshu-dee](https://github.com/divyanshu-dee).

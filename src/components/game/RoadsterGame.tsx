@@ -293,6 +293,11 @@ export const RoadsterGame: React.FC = () => {
         <canvas
           ref={canvasRef}
           className="w-full h-full block touch-none"
+          onPointerDown={(event) => {
+            if (event.button === 0 && gameState === 'PLAYING') {
+              handleBoost(event.pointerType === 'touch');
+            }
+          }}
         />
 
         {/* Retro CRT Scanlines & Vignette Layer */}
@@ -391,26 +396,6 @@ export const RoadsterGame: React.FC = () => {
           />
         )}
 
-        {/* Mobile Boost Button - Large tap zone at bottom for gameplay */}
-        {isMobile && gameState === 'PLAYING' && (
-          <div
-            className="absolute bottom-0 left-0 right-0 h-[40%] z-[5] pointer-events-auto"
-            onTouchStart={(e) => {
-              e.preventDefault();
-              handleBoost(true);
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              handleBoostRelease();
-            }}
-            style={{ touchAction: 'none' }}
-          >
-            {/* Visual hint for touch area */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/30 text-[10px] font-mono tracking-widest pointer-events-none">
-              TAP & HOLD TO BOOST
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
