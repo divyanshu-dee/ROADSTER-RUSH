@@ -1,10 +1,16 @@
-import { CarSkin, Achievement, PlayerStats, GameSettings } from './types';
+import {
+  CarSkin,
+  Achievement,
+  Challenge,
+  PlayerStats,
+  GameSettings,
+} from './types';
 
 export const CAR_SKINS: CarSkin[] = [
   {
     id: 'roadster_red',
-    name: 'Signature Red',
-    description: 'Iconic metallic multi-coat red with carbon aero accents',
+    name: 'Plasma Red',
+    description: 'Signature multi-coat hypercar red with carbon aero splitter',
     bodyColor: '#e82127',
     accentColor: '#ff4d52',
     glowColor: '#ff2222',
@@ -14,22 +20,34 @@ export const CAR_SKINS: CarSkin[] = [
     requirementValue: 0,
   },
   {
+    id: 'silver_streak',
+    name: 'Silver Streak',
+    description: 'Liquid metallic mercury finish with electric cyan aerospace trim',
+    bodyColor: '#d1d5db',
+    accentColor: '#00f0ff',
+    glowColor: '#38bdf8',
+    unlocked: false,
+    unlockCondition: 'Score 10+ in a single flight',
+    requirementType: 'score',
+    requirementValue: 10,
+  },
+  {
     id: 'cyber_cyan',
-    name: 'Neo Cyberpunk',
-    description: 'Electric neon cyan with radioactive magenta underglow',
+    name: 'Neo Cyan',
+    description: 'Radioactive neon cyan chassis with radioactive magenta underglow',
     bodyColor: '#00f0ff',
     accentColor: '#ff007f',
     glowColor: '#00f0ff',
     unlocked: false,
-    unlockCondition: 'Score 15+ in a single run',
+    unlockCondition: 'Score 20+ in a single flight',
     requirementType: 'score',
-    requirementValue: 15,
+    requirementValue: 20,
   },
   {
     id: 'stealth_matte',
-    name: 'Plaid Stealth',
-    description: 'Matte carbon black with crimson cyber detailing',
-    bodyColor: '#1c1c24',
+    name: 'Midnight Plaid',
+    description: 'Matte carbon black weave with crimson cyber edge piping',
+    bodyColor: '#16161e',
     accentColor: '#ff2d55',
     glowColor: '#ff375f',
     unlocked: false,
@@ -40,38 +58,79 @@ export const CAR_SKINS: CarSkin[] = [
   {
     id: 'solar_flare',
     name: 'Solar Flare Gold',
-    description: 'Polished hyper-reflective gold with solar plasma exhaust',
+    description: 'Polished hyper-reflective gold mirror with solar plasma thrusters',
     bodyColor: '#ffd700',
     accentColor: '#ff8c00',
     glowColor: '#ffae19',
     unlocked: false,
-    unlockCondition: 'Score 30+ in a single run',
+    unlockCondition: 'Score 35+ in a single flight',
     requirementType: 'score',
-    requirementValue: 30,
-  },
-  {
-    id: 'spacex_thruster',
-    name: 'SpaceX Thruster',
-    description: 'Starship pearl white chassis with composite cold gas thrusters',
-    bodyColor: '#f0f4f8',
-    accentColor: '#0070f3',
-    glowColor: '#38bdf8',
-    unlocked: false,
-    unlockCondition: 'Score 50+ in a single run',
-    requirementType: 'score',
-    requirementValue: 50,
+    requirementValue: 35,
   },
   {
     id: 'vaporwave',
     name: 'Synthwave Sunset',
-    description: 'Retro 80s violet-to-peach gradient with laser reflections',
+    description: 'Dual-tone violet-to-peach gradient with laser reflection sheen',
     bodyColor: '#a855f7',
     accentColor: '#f43f5e',
     glowColor: '#ec4899',
     unlocked: false,
-    unlockCondition: 'Complete 20 total flight runs',
+    unlockCondition: 'Complete 15 total flight runs',
     requirementType: 'runs',
-    requirementValue: 20,
+    requirementValue: 15,
+  },
+];
+
+export const INITIAL_CHALLENGES: Challenge[] = [
+  {
+    id: 'survive_30',
+    title: 'Iron Glider',
+    description: 'Survive in flight for 30 seconds in one run',
+    rewardDescription: '+10 Orbs Bonus',
+    targetValue: 30,
+    currentValue: 0,
+    completed: false,
+    type: 'survive_time',
+  },
+  {
+    id: 'pass_10',
+    title: 'Precision Pilot',
+    description: 'Navigate through 10 energy gates in a single flight',
+    rewardDescription: '+15 Orbs Bonus',
+    targetValue: 10,
+    currentValue: 0,
+    completed: false,
+    type: 'pass_gates_single',
+  },
+  {
+    id: 'collect_15',
+    title: 'Plasma Magnet',
+    description: 'Collect 15 energy orbs in a single run',
+    rewardDescription: '+20 Orbs Bonus',
+    targetValue: 15,
+    currentValue: 0,
+    completed: false,
+    type: 'collect_orbs_single',
+  },
+  {
+    id: 'beat_high_score',
+    title: 'Break The Limit',
+    description: 'Set a brand new Personal Best score',
+    rewardDescription: '+25 Orbs Bonus',
+    targetValue: 1,
+    currentValue: 0,
+    completed: false,
+    type: 'new_high_score',
+  },
+  {
+    id: 'score_20',
+    title: 'Plaid Overdrive',
+    description: 'Reach a flight score of 20 or higher',
+    rewardDescription: '+30 Orbs Bonus',
+    targetValue: 20,
+    currentValue: 0,
+    completed: false,
+    type: 'reach_score',
   },
 ];
 
@@ -159,8 +218,8 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
-const STATS_STORAGE_KEY = 'roadster_rush_player_stats_v1';
-const SETTINGS_STORAGE_KEY = 'roadster_rush_settings_v1';
+const STATS_STORAGE_KEY = 'roadster_rush_player_stats_v2';
+const SETTINGS_STORAGE_KEY = 'roadster_rush_settings_v2';
 
 export function getTodayDateString(): string {
   const d = new Date();
@@ -178,35 +237,25 @@ export function getDailySeed(): number {
 }
 
 export function loadPlayerStats(): PlayerStats {
-  if (typeof window === 'undefined') {
-    return {
-      highScore: 0,
-      bestDistance: 0,
-      totalDistance: 0,
-      totalRuns: 0,
-      totalOrbs: 0,
-      gatesPassed: 0,
-      selectedSkinId: 'roadster_red',
-      unlockedSkins: ['roadster_red'],
-      achievements: {},
-    };
-  }
+  const defaults: PlayerStats = {
+    highScore: 0,
+    bestDistance: 0,
+    totalDistance: 0,
+    totalRuns: 0,
+    totalOrbs: 0,
+    gatesPassed: 0,
+    selectedSkinId: 'roadster_red',
+    unlockedSkins: ['roadster_red'],
+    achievements: {},
+    completedChallenges: {},
+    tutorialCompleted: false,
+  };
+
+  if (typeof window === 'undefined') return defaults;
 
   try {
     const raw = localStorage.getItem(STATS_STORAGE_KEY);
-    if (!raw) {
-      return {
-        highScore: 0,
-        bestDistance: 0,
-        totalDistance: 0,
-        totalRuns: 0,
-        totalOrbs: 0,
-        gatesPassed: 0,
-        selectedSkinId: 'roadster_red',
-        unlockedSkins: ['roadster_red'],
-        achievements: {},
-      };
-    }
+    if (!raw) return defaults;
     const parsed = JSON.parse(raw);
     return {
       highScore: Number(parsed.highScore) || 0,
@@ -218,21 +267,13 @@ export function loadPlayerStats(): PlayerStats {
       selectedSkinId: parsed.selectedSkinId || 'roadster_red',
       unlockedSkins: Array.isArray(parsed.unlockedSkins) && parsed.unlockedSkins.length ? parsed.unlockedSkins : ['roadster_red'],
       achievements: parsed.achievements || {},
+      completedChallenges: parsed.completedChallenges || {},
       lastDailyDate: parsed.lastDailyDate,
       dailyHighScore: Number(parsed.dailyHighScore) || 0,
+      tutorialCompleted: Boolean(parsed.tutorialCompleted),
     };
   } catch {
-    return {
-      highScore: 0,
-      bestDistance: 0,
-      totalDistance: 0,
-      totalRuns: 0,
-      totalOrbs: 0,
-      gatesPassed: 0,
-      selectedSkinId: 'roadster_red',
-      unlockedSkins: ['roadster_red'],
-      achievements: {},
-    };
+    return defaults;
   }
 }
 
@@ -241,7 +282,7 @@ export function savePlayerStats(stats: PlayerStats) {
   try {
     localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(stats));
   } catch {
-    // Storage might be full or disabled
+    // Storage quota or disabled
   }
 }
 
@@ -254,6 +295,8 @@ export function loadGameSettings(): GameSettings {
     screenShake: true,
     reducedMotion: false,
     showFps: false,
+    graphicsPreset: 'balanced',
+    controlProfile: 'arcade',
   };
 
   if (typeof window === 'undefined') return defaults;
@@ -290,6 +333,7 @@ export interface ProgressionUpdate {
   newDailyHighScore: boolean;
   unlockedSkins: CarSkin[];
   unlockedAchievements: Achievement[];
+  completedChallenges: Challenge[];
   updatedStats: PlayerStats;
 }
 
@@ -302,7 +346,7 @@ export function processRunEnd(results: RunResults): ProgressionUpdate {
   const bestDistance = Math.max(currentStats.bestDistance, results.distance);
   const totalDistance = currentStats.totalDistance + results.distance;
   const totalRuns = currentStats.totalRuns + 1;
-  const totalOrbs = currentStats.totalOrbs + results.orbs;
+  let totalOrbs = currentStats.totalOrbs + results.orbs;
   const gatesPassed = currentStats.gatesPassed + results.score;
 
   let dailyHighScore = currentStats.dailyHighScore || 0;
@@ -316,6 +360,27 @@ export function processRunEnd(results: RunResults): ProgressionUpdate {
       newDailyHighScore = true;
     }
   }
+
+  // Check Challenges / Missions
+  const newlyCompletedChallenges: Challenge[] = [];
+  const completedChallengesRecord = { ...currentStats.completedChallenges };
+
+  INITIAL_CHALLENGES.forEach((ch) => {
+    if (completedChallengesRecord[ch.id]) return;
+
+    let satisfied = false;
+    if (ch.type === 'survive_time' && results.survivalTime >= ch.targetValue) satisfied = true;
+    if (ch.type === 'pass_gates_single' && results.score >= ch.targetValue) satisfied = true;
+    if (ch.type === 'collect_orbs_single' && results.orbs >= ch.targetValue) satisfied = true;
+    if (ch.type === 'new_high_score' && newHighScore && results.score > 0) satisfied = true;
+    if (ch.type === 'reach_score' && results.score >= ch.targetValue) satisfied = true;
+
+    if (satisfied) {
+      completedChallengesRecord[ch.id] = true;
+      newlyCompletedChallenges.push({ ...ch, completed: true });
+      totalOrbs += 15; // Mission bonus reward!
+    }
+  });
 
   // Check skins unlock
   const newlyUnlockedSkins: CarSkin[] = [];
@@ -373,8 +438,10 @@ export function processRunEnd(results: RunResults): ProgressionUpdate {
     selectedSkinId: currentStats.selectedSkinId,
     unlockedSkins: Array.from(currentUnlockedSkinIds),
     achievements: achievementsRecord,
+    completedChallenges: completedChallengesRecord,
     lastDailyDate: results.isDaily ? todayStr : currentStats.lastDailyDate,
     dailyHighScore,
+    tutorialCompleted: currentStats.tutorialCompleted,
   };
 
   savePlayerStats(updatedStats);
@@ -384,6 +451,7 @@ export function processRunEnd(results: RunResults): ProgressionUpdate {
     newDailyHighScore,
     unlockedSkins: newlyUnlockedSkins,
     unlockedAchievements: newlyUnlockedAchievements,
+    completedChallenges: newlyCompletedChallenges,
     updatedStats,
   };
 }

@@ -1,5 +1,15 @@
 export type GameState = 'START' | 'COUNTDOWN' | 'PLAYING' | 'PAUSED' | 'GAMEOVER';
 
+export type GraphicsPreset = 'quality' | 'balanced' | 'performance';
+export type ControlProfile = 'arcade' | 'casual';
+
+export type ObstacleFamily =
+  | 'quantum_gate'     // Pulsing high-energy laser beam
+  | 'neon_pylon'       // Cyber-grid industrial pillar with hazard chevrons
+  | 'floating_barrier' // Hovering quantum barrier blocks
+  | 'cyber_tunnel'     // Narrow speed corridor section
+  | 'bonus_gate';      // Golden archway with guaranteed energy cores
+
 export interface CarSkin {
   id: string;
   name: string;
@@ -44,6 +54,8 @@ export interface ObstaclePylon {
   orbY: number;
   orbCollected: boolean;
   theme: 'laser' | 'cyber' | 'pylon';
+  family: ObstacleFamily;
+  warningBeacon?: boolean;
 }
 
 export interface EnergyOrb {
@@ -54,6 +66,7 @@ export interface EnergyOrb {
   value: number;
   pulsePhase: number;
   sparkleTimer: number;
+  type?: 'standard' | 'super';
 }
 
 export interface Particle {
@@ -66,7 +79,7 @@ export interface Particle {
   color: string;
   size: number;
   glow: boolean;
-  shape?: 'circle' | 'spark' | 'smoke' | 'ring';
+  shape?: 'circle' | 'spark' | 'smoke' | 'ring' | 'diamond';
 }
 
 export interface FloatingText {
@@ -90,6 +103,17 @@ export interface Achievement {
   maxProgress: number;
 }
 
+export interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  rewardDescription: string;
+  targetValue: number;
+  currentValue: number;
+  completed: boolean;
+  type: 'survive_time' | 'pass_gates_single' | 'collect_orbs_single' | 'new_high_score' | 'reach_score';
+}
+
 export interface PlayerStats {
   highScore: number;
   bestDistance: number;
@@ -100,8 +124,10 @@ export interface PlayerStats {
   selectedSkinId: string;
   unlockedSkins: string[];
   achievements: Record<string, boolean>;
+  completedChallenges: Record<string, boolean>;
   lastDailyDate?: string;
   dailyHighScore?: number;
+  tutorialCompleted: boolean;
 }
 
 export interface GameSettings {
@@ -112,4 +138,6 @@ export interface GameSettings {
   screenShake: boolean;
   reducedMotion: boolean;
   showFps: boolean;
+  graphicsPreset: GraphicsPreset;
+  controlProfile: ControlProfile;
 }

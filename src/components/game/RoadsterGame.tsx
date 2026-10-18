@@ -25,7 +25,9 @@ import { GameOverScreen } from './GameOverScreen';
 import { PauseMenu } from './PauseMenu';
 import { GarageModal } from './GarageModal';
 import { AchievementsModal } from './AchievementsModal';
+import { ChallengesModal } from './ChallengesModal';
 import { SettingsModal } from './SettingsModal';
+import { TutorialOverlay } from './TutorialOverlay';
 
 export const RoadsterGame: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -56,10 +58,12 @@ export const RoadsterGame: React.FC = () => {
   }>({ score: 0, distance: 0, orbs: 0, time: 0 });
   const [progressionUpdate, setProgressionUpdate] = useState<ProgressionUpdate | null>(null);
 
-  // Modals
+  // Modals & Overlays
   const [isGarageOpen, setIsGarageOpen] = useState(false);
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
+  const [isChallengesOpen, setIsChallengesOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // Initialize Game Engine on Canvas Mount
   useEffect(() => {
@@ -91,6 +95,12 @@ export const RoadsterGame: React.FC = () => {
 
     engineRef.current = engine;
 
+    // Show tutorial on very first launch
+    const initialStats = loadPlayerStats();
+    if (!initialStats.tutorialCompleted) {
+      setShowTutorial(true);
+    }
+
     return () => {
       engine.destroy();
       engineRef.current = null;
@@ -113,15 +123,22 @@ export const RoadsterGame: React.FC = () => {
   }, [settings]);
 
   // Handle Controls & Keyboard Bindings
-  const handleBoost = useCallback(() => {
+  const handleBoost = useCallback((isTouch: boolean = false) => {
     if (gameState === 'PLAYING') {
-      engineRef.current?.handleBoostPress();
-    } else if (gameState === 'START' && !isGarageOpen && !isAchievementsOpen && !isSettingsOpen) {
+      engineRef.current?.handleBoostPress(isTouch);
+    } else if (
+      gameState === 'START' &&
+      !isGarageOpen &&
+      !isAchievementsOpen &&
+      !isChallengesOpen &&
+      !isSettingsOpen &&
+      !showTutorial
+    ) {
       startGame(false);
     } else if (gameState === 'GAMEOVER') {
       restartGame();
     }
-  }, [gameState, isGarageOpen, isAchievementsOpen, isSettingsOpen]);
+  }, [gameState, isGarageOpen, isAchievementsOpen, isChallengesOpen, isSettingsOpen, showTutorial]);
 
   const handleBoostRelease = useCallback(() => {
     if (gameState === 'PLAYING') {
@@ -149,7 +166,7 @@ export const RoadsterGame: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        handleBoost();
+        handleBoost(false);
       } else if (e.code === 'Escape' || e.key.toLowerCase() === 'p') {
         e.preventDefault();
         togglePause();
@@ -213,15 +230,21 @@ export const RoadsterGame: React.FC = () => {
     savePlayerStats(updatedStats);
   };
 
+  const handleDismissTutorial = () => {
+    setShowTutorial(false);
+    const updated = { ...stats, tutorialCompleted: true };
+    setStats(updated);
+    savePlayerStats(updated);
+  };
+
   return (
     <div className="relative w-full h-full min-h-screen bg-black overflow-hidden select-none flex items-center justify-center">
       {/* 2D / 3D Canvas Game Viewport */}
       <div
         className="relative w-full h-full flex items-center justify-center cursor-pointer"
         onPointerDown={(e) => {
-          // If clicking background during play, trigger boost
           if (gameState === 'PLAYING') {
-            handleBoost();
+            handleBoost(e.pointerType === 'touch');
           }
         }}
         onPointerUp={(e) => {
@@ -265,8 +288,10 @@ export const RoadsterGame: React.FC = () => {
             onStartGame={() => startGame(false)}
             onStartDaily={() => startGame(true)}
             onOpenGarage={() => setIsGarageOpen(true)}
+            onOpenChallenges={() => setIsChallengesOpen(true)}
             onOpenAchievements={() => setIsAchievementsOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenTutorial={() => setShowTutorial(true)}
           />
         )}
 
@@ -286,19 +311,29 @@ export const RoadsterGame: React.FC = () => {
         {gameState === 'GAMEOVER' && (
           <GameOverScreen
             runStats={lastRunStats}
+            selectedSkin={selectedSkin}
             progressionUpdate={progressionUpdate}
             onRestart={restartGame}
             onHome={returnHome}
           />
         )}
 
-        {/* Modals */}
+        {/* Modals & Overlays */}
+        {showTutorial && <TutorialOverlay onDismiss={handleDismissTutorial} />}
+
         {isGarageOpen && (
           <GarageModal
             stats={stats}
             selectedSkin={selectedSkin}
             onSelectSkin={handleSelectSkin}
             onClose={() => setIsGarageOpen(false)}
+          />
+        )}
+
+        {isChallengesOpen && (
+          <ChallengesModal
+            stats={stats}
+            onClose={() => setIsChallengesOpen(false)}
           />
         )}
 

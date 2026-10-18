@@ -13,7 +13,7 @@ import { SeededRNG, updateObstacles, calculateGameSpeed } from './obstacles';
 import { checkCarObstacleCollision, checkOrbPickups } from './collision';
 import { SceneRenderer } from './carRenderer';
 import { soundManager } from './audio';
-import { processRunEnd, ProgressionUpdate, CAR_SKINS } from './progression';
+import { processRunEnd, ProgressionUpdate } from './progression';
 
 export interface GameEngineCallbacks {
   onScoreUpdate: (score: number, distance: number, orbs: number) => void;
@@ -52,15 +52,22 @@ export class GameEngine {
   private survivalTime: number = 0;
   private isBoostingInput: boolean = false;
 
+  // Camera & Easing
+  private cameraOffsetY: number = 0;
+  private targetCameraOffsetY: number = 0;
+  private cameraShakeIntensity: number = 0;
+
   // Crash & Slow-mo
   private isSlowMo: boolean = false;
   private slowMoTimer: number = 0;
-  private cameraShakeIntensity: number = 0;
 
   // Screen scale
   private scale: number = 1;
   private offsetX: number = 0;
   private offsetY: number = 0;
+
+  // Touch Debounce
+  private touchHandled: boolean = false;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -81,6 +88,10 @@ export class GameEngine {
 
     this.resize();
     window.addEventListener('resize', this.handleResize);
+
+    // Initial render loop for start screen background animation
+    this.lastTime = performance.now();
+    this.loop(this.lastTime);
   }
 
   private handleResize = () => {
@@ -93,7 +104,7 @@ export class GameEngine {
     const parentWidth = parent ? parent.clientWidth : window.innerWidth;
     const parentHeight = parent ? parent.clientHeight : window.innerHeight;
 
-    // Retina / high DPI scaling
+    // Device Pixel Ratio scaling (capped at 2 for performance)
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.canvas.width = parentWidth * dpr;
     this.canvas.height = parentHeight * dpr;
@@ -138,6 +149,8 @@ export class GameEngine {
     this.isSlowMo = false;
     this.slowMoTimer = 0;
     this.cameraShakeIntensity = 0;
+    this.cameraOffsetY = 0;
+    this.targetCameraOffsetY = 0;
     this.isBoostingInput = false;
 
     this.state = 'PLAYING';
@@ -146,9 +159,6 @@ export class GameEngine {
 
     soundManager.startMusic();
     this.lastTime = performance.now();
-    if (!this.animationFrameId) {
-      this.loop(this.lastTime);
-    }
   }
 
   public startCountdown(isDaily: boolean = false, dailySeed?: number, onFinish?: () => void) {
@@ -192,7 +202,17 @@ export class GameEngine {
     this.lastTime = performance.now();
   }
 
-  public handleBoostPress() {
+  public handleBoostPress(isTouch: boolean = false) {
+    if (isTouch) {
+      this.touchHandled = true;
+      setTimeout(() => {
+        this.touchHandled = false;
+      }, 350);
+    } else if (this.touchHandled) {
+      // Discard synthetic click fired right after touch
+      return;
+    }
+
     soundManager.init();
     soundManager.resume();
 
@@ -207,9 +227,12 @@ export class GameEngine {
   }
 
   public spawnParticles = (newParticles: Particle[]) => {
+    const maxParticles =
+      this.settings.graphicsPreset === 'performance' ? 40 : this.settings.graphicsPreset === 'balanced' ? 90 : 160;
+
     this.particles.push(...newParticles);
-    if (this.particles.length > 120) {
-      this.particles.splice(0, this.particles.length - 120);
+    if (this.particles.length > maxParticles) {
+      this.particles.splice(0, this.particles.length - maxParticles);
     }
   };
 
@@ -221,6 +244,11 @@ export class GameEngine {
 
     if (this.state === 'PLAYING' || this.isSlowMo) {
       this.update(dt);
+    } else if (this.state === 'START') {
+      // Gentle hovering animation for Roadster on start screen
+      this.gameTime += dt;
+      this.car.y = 280 + Math.sin(this.gameTime * 2.2) * 12;
+      this.car.rotation = Math.sin(this.gameTime * 1.5) * 0.05;
     }
 
     this.render();
@@ -237,9 +265,20 @@ export class GameEngine {
       const curSpeed = calculateGameSpeed(this.score);
       this.distance += Math.round(curSpeed * dt * 0.1);
 
-      // Update Car Physics
-      updateCarPhysics(this.car, effectiveDt, this.isBoostingInput, this.spawnParticles);
-      this.isBoostingInput = false; // Impulse applied
+      // Update Car Physics with selected Control Profile
+      updateCarPhysics(
+        this.car,
+        effectiveDt,
+        this.isBoostingInput,
+        this.settings.controlProfile || 'arcade',
+        this.spawnParticles
+      );
+      this.isBoostingInput = false; // Single impulse per input trigger
+
+      // Smooth camera easing tracking car vertical velocity
+      const targetOffset = (this.car.y - WORLD_HEIGHT * 0.5) * -0.06;
+      this.targetCameraOffsetY = targetOffset;
+      this.cameraOffsetY += (this.targetCameraOffsetY - this.cameraOffsetY) * Math.min(1, dt * 4.5);
 
       // Update Engine Audio
       soundManager.updateEnginePitch(this.car.vy / 400, this.car.isBoosting);
@@ -268,7 +307,7 @@ export class GameEngine {
           // Milestone celebrations
           if (this.score % 10 === 0) {
             soundManager.playAchievement();
-            this.addFloatingText(`MILESTONE ${this.score}!`, this.car.x, this.car.y - 30, '#ffd700');
+            this.addFloatingText(`MILESTONE ${this.score}!`, this.car.x, this.car.y - 32, '#ffd700');
           } else {
             this.addFloatingText('+1', this.car.x, this.car.y - 20, '#00f0ff');
           }
@@ -281,12 +320,13 @@ export class GameEngine {
         this.score += orb.value;
         soundManager.playOrbPickup();
         this.callbacks.onScoreUpdate(this.score, this.distance, this.orbsCollected);
-        this.addFloatingText(`+${orb.value} ORB`, orb.x, orb.y - 15, '#ffd700');
+        this.addFloatingText(`+${orb.value} ORB`, orb.x, orb.y - 15, orb.type === 'super' ? '#ffd700' : '#00f0ff');
 
         // Sparkle burst
-        for (let s = 0; s < 12; s++) {
+        const burstCount = this.settings.graphicsPreset === 'performance' ? 6 : 14;
+        for (let s = 0; s < burstCount; s++) {
           const angle = Math.random() * Math.PI * 2;
-          const spd = 60 + Math.random() * 80;
+          const spd = 60 + Math.random() * 90;
           this.particles.push({
             x: orb.x,
             y: orb.y,
@@ -294,7 +334,7 @@ export class GameEngine {
             vy: Math.sin(angle) * spd,
             life: 0.35,
             maxLife: 0.35,
-            color: '#00f0ff',
+            color: orb.type === 'super' ? '#ffd700' : '#00f0ff',
             size: 3,
             glow: true,
             shape: 'circle',
@@ -370,7 +410,8 @@ export class GameEngine {
     }
 
     // Spawn dramatic explosion debris & cyber shockwave
-    for (let i = 0; i < 35; i++) {
+    const debrisCount = this.settings.graphicsPreset === 'performance' ? 18 : 36;
+    for (let i = 0; i < debrisCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 120 + Math.random() * 320;
       this.particles.push({
@@ -434,7 +475,7 @@ export class GameEngine {
     this.ctx.rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.ctx.clip();
 
-    // Render Scene
+    // Render Scene with graphics preset & camera offset
     const curSpeed = calculateGameSpeed(this.score);
     this.renderer.render(
       this.ctx,
@@ -447,7 +488,9 @@ export class GameEngine {
       curSpeed,
       this.gameTime,
       0.016,
-      this.isSlowMo
+      this.isSlowMo,
+      this.settings.graphicsPreset || 'balanced',
+      this.cameraOffsetY
     );
 
     this.ctx.restore();
