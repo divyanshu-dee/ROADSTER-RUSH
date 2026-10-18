@@ -185,10 +185,14 @@ export const RoadsterGame: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('pointerup', handleBoostRelease);
+    window.addEventListener('blur', handleBoostRelease);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('pointerup', handleBoostRelease);
+      window.removeEventListener('blur', handleBoostRelease);
     };
   }, [handleBoost, handleBoostRelease, togglePause, toggleMute]);
 

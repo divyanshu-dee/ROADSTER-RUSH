@@ -99,7 +99,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       {/* Bottom Hint on Mobile */}
       <div className="flex justify-between items-end text-[11px] text-slate-400/80 font-mono">
         <div className="hidden md:block">
-          TAP / SPACE / CLICK TO BOOST • ESC TO PAUSE
+          HOLD OR TAP [SPACE] / [CLICK] TO FIRE QUAD THRUSTERS • [ESC] PAUSE
         </div>
         <div className="text-right">
           BEST: <span className="text-cyan-400 font-bold">{highScore}</span>

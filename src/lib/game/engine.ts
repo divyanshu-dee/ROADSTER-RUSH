@@ -50,7 +50,10 @@ export class GameEngine {
   private distance: number = 0;
   private orbsCollected: number = 0;
   private survivalTime: number = 0;
-  private isBoostingInput: boolean = false;
+
+  // Four-Thruster Flight Input State
+  private isHoldingBoost: boolean = false;
+  private isInitialPress: boolean = false;
 
   // Camera & Easing
   private cameraOffsetY: number = 0;
@@ -151,7 +154,8 @@ export class GameEngine {
     this.cameraShakeIntensity = 0;
     this.cameraOffsetY = 0;
     this.targetCameraOffsetY = 0;
-    this.isBoostingInput = false;
+    this.isHoldingBoost = false;
+    this.isInitialPress = false;
 
     this.state = 'PLAYING';
     this.callbacks.onStateChange(this.state);
@@ -190,6 +194,8 @@ export class GameEngine {
   public pause() {
     if (this.state !== 'PLAYING') return;
     this.state = 'PAUSED';
+    this.isHoldingBoost = false;
+    this.isInitialPress = false;
     this.callbacks.onStateChange(this.state);
     soundManager.stopMusic();
   }
@@ -209,7 +215,6 @@ export class GameEngine {
         this.touchHandled = false;
       }, 350);
     } else if (this.touchHandled) {
-      // Discard synthetic click fired right after touch
       return;
     }
 
@@ -217,13 +222,17 @@ export class GameEngine {
     soundManager.resume();
 
     if (this.state === 'PLAYING') {
-      this.isBoostingInput = true;
-      soundManager.playBoost();
+      if (!this.isHoldingBoost) {
+        this.isInitialPress = true;
+        soundManager.playBoost();
+      }
+      this.isHoldingBoost = true;
     }
   }
 
   public handleBoostRelease() {
-    this.isBoostingInput = false;
+    this.isHoldingBoost = false;
+    this.isInitialPress = false;
   }
 
   public spawnParticles = (newParticles: Particle[]) => {
@@ -245,10 +254,11 @@ export class GameEngine {
     if (this.state === 'PLAYING' || this.isSlowMo) {
       this.update(dt);
     } else if (this.state === 'START') {
-      // Gentle hovering animation for Roadster on start screen
+      // Gentle hovering idle animation for Roadster on start screen
       this.gameTime += dt;
-      this.car.y = 280 + Math.sin(this.gameTime * 2.2) * 12;
-      this.car.rotation = Math.sin(this.gameTime * 1.5) * 0.05;
+      this.car.y = 280 + Math.sin(this.gameTime * 2.2) * 10;
+      this.car.rotation = Math.sin(this.gameTime * 1.5) * 0.04;
+      this.car.thrustPower += (0 - this.car.thrustPower) * Math.min(1, dt * 8);
     }
 
     this.render();
@@ -265,17 +275,18 @@ export class GameEngine {
       const curSpeed = calculateGameSpeed(this.score);
       this.distance += Math.round(curSpeed * dt * 0.1);
 
-      // Update Car Physics with selected Control Profile
+      // Update Car Physics with Four-Thruster Lift and selected Control Profile
       updateCarPhysics(
         this.car,
         effectiveDt,
-        this.isBoostingInput,
+        this.isHoldingBoost,
+        this.isInitialPress,
         this.settings.controlProfile || 'arcade',
         this.spawnParticles
       );
-      this.isBoostingInput = false; // Single impulse per input trigger
+      this.isInitialPress = false; // Reset after single frame impulse
 
-      // Smooth camera easing tracking car vertical velocity
+      // Smooth camera easing tracking car vertical position
       const targetOffset = (this.car.y - WORLD_HEIGHT * 0.5) * -0.06;
       this.targetCameraOffsetY = targetOffset;
       this.cameraOffsetY += (this.targetCameraOffsetY - this.cameraOffsetY) * Math.min(1, dt * 4.5);
@@ -352,6 +363,8 @@ export class GameEngine {
       this.slowMoTimer += dt;
       if (this.slowMoTimer >= 0.45) {
         this.isSlowMo = false;
+        this.isHoldingBoost = false;
+        this.isInitialPress = false;
         this.state = 'GAMEOVER';
         this.callbacks.onStateChange('GAMEOVER');
 
@@ -402,6 +415,8 @@ export class GameEngine {
   private triggerCrash(contactX: number, contactY: number) {
     this.isSlowMo = true;
     this.slowMoTimer = 0;
+    this.isHoldingBoost = false;
+    this.isInitialPress = false;
     soundManager.playCrash();
     soundManager.stopMusic();
 
@@ -409,7 +424,7 @@ export class GameEngine {
       this.cameraShakeIntensity = 18;
     }
 
-    // Spawn dramatic explosion debris & cyber shockwave
+    // Spawn explosion debris & cyber shockwave
     const debrisCount = this.settings.graphicsPreset === 'performance' ? 18 : 36;
     for (let i = 0; i < debrisCount; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -421,7 +436,7 @@ export class GameEngine {
         vy: Math.sin(angle) * speed,
         life: 0.5 + Math.random() * 0.4,
         maxLife: 0.9,
-        color: Math.random() > 0.5 ? this.skin.accentColor : '#ff0033',
+        color: Math.random() > 0.5 ? this.skin.accentColor : '#ef4444',
         size: 3 + Math.random() * 6,
         glow: true,
         shape: Math.random() > 0.5 ? 'spark' : 'circle',

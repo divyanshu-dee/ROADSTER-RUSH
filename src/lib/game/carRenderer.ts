@@ -7,7 +7,7 @@ import {
   FloatingText,
   GraphicsPreset,
 } from './types';
-import { WORLD_WIDTH, WORLD_HEIGHT } from './physics';
+import { WORLD_WIDTH, WORLD_HEIGHT, NOZZLE_OFFSETS } from './physics';
 
 export class SceneRenderer {
   // Parallax offsets
@@ -19,7 +19,7 @@ export class SceneRenderer {
   private roadOffset = 0;
   private foregroundStreakOffset = 0;
 
-  // Starfield & Cloud Particles
+  // Starfield, Clouds, and Foreground Streaks
   private stars: Array<{ x: number; y: number; size: number; speed: number; brightness: number }> = [];
   private clouds: Array<{ x: number; y: number; width: number; height: number; speed: number; alpha: number }> = [];
   private foregroundStreaks: Array<{ x: number; y: number; length: number; speed: number; alpha: number }> = [];
@@ -49,13 +49,13 @@ export class SceneRenderer {
     }
 
     // Generate fast foreground speed streaks
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 16; i++) {
       this.foregroundStreaks.push({
         x: Math.random() * WORLD_WIDTH,
         y: Math.random() * WORLD_HEIGHT,
         length: 40 + Math.random() * 90,
         speed: 1.4 + Math.random() * 0.6,
-        alpha: 0.2 + Math.random() * 0.3,
+        alpha: 0.2 + Math.random() * 0.25,
       });
     }
   }
@@ -87,24 +87,24 @@ export class SceneRenderer {
     this.foregroundStreakOffset = (this.foregroundStreakOffset + speed * 1.6 * dt) % WORLD_WIDTH;
 
     ctx.save();
-    // Subtle camera response offset (visual only, does not alter hitboxes)
+    // Subtle camera vertical response
     ctx.translate(0, cameraOffsetY);
 
-    // 1. Deep Midnight Cosmic Sky & Atmosphere
-    this.drawSky(ctx, gameTime);
+    // 1. Deep Midnight Cosmic Sky
+    this.drawSky(ctx);
 
-    // 2. Twinkling Stars
+    // 2. Twinkling Starfield
     this.drawStars(ctx, gameTime);
 
-    // 3. Pixel-Art Layered Clouds
+    // 3. Pixel-Art Clouds
     if (preset !== 'performance') {
       this.drawClouds(ctx);
     }
 
-    // 4. Distant Teal & Indigo Mountain Peaks
+    // 4. Distant Mountain Peaks
     this.drawMountains(ctx);
 
-    // 5. Layered Pine / Cyber Forest Silhouettes
+    // 5. Pine Forest Silhouettes
     if (preset !== 'performance') {
       this.drawForest(ctx);
     }
@@ -112,38 +112,38 @@ export class SceneRenderer {
     // 6. Neo-Tokyo Skyline with Lit Billboards
     this.drawCitySkyline(ctx, gameTime);
 
-    // 7. Pseudo-3D Perspective Racing Corridor / Ground Deck
-    this.drawPerspectiveHighway(ctx, gameTime);
+    // 7. Pseudo-3D Perspective Racing Corridor
+    this.drawPerspectiveHighway(ctx);
 
     // 8. 3D-Shaded Obstacles & Warning Beacons
     this.drawObstacles(ctx, obstacles, gameTime, preset);
 
-    // 9. Floating Golden Plasma Cores
+    // 9. Golden Plasma Cores
     this.drawOrbs(ctx, orbs, gameTime, preset);
 
-    // 10. Exhaust Sparks, Shockwaves, and Debris
+    // 10. Exhaust Particles & Debris
     this.drawParticles(ctx, particles, preset);
 
-    // 11. Tesla Roadster Player Hypercar
+    // 11. Realistic Silver Tesla Roadster with Quad Underside Thrusters
     this.drawRoadster(ctx, car, skin, gameTime, preset);
 
-    // 12. Foreground Fast Speed Streaks & Atmospheric Fog
+    // 12. Foreground Speed Streaks
     if (preset === 'quality') {
       this.drawForegroundStreaks(ctx);
     }
 
-    // 13. Floating Score Popups (+1, +5, Milestone!)
+    // 13. Floating Score Popups
     this.drawFloatingTexts(ctx, floatingTexts);
 
     ctx.restore();
   }
 
-  private drawSky(ctx: CanvasRenderingContext2D, gameTime: number) {
+  private drawSky(ctx: CanvasRenderingContext2D) {
     const skyGrad = ctx.createLinearGradient(0, 0, 0, WORLD_HEIGHT);
-    skyGrad.addColorStop(0, '#030612');
-    skyGrad.addColorStop(0.45, '#081028');
-    skyGrad.addColorStop(0.75, '#121a3e');
-    skyGrad.addColorStop(1, '#080d22');
+    skyGrad.addColorStop(0, '#020510');
+    skyGrad.addColorStop(0.45, '#070f24');
+    skyGrad.addColorStop(0.75, '#101738');
+    skyGrad.addColorStop(1, '#070c20');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
@@ -156,8 +156,8 @@ export class SceneRenderer {
       WORLD_HEIGHT * 0.32,
       380
     );
-    nebulaGrad.addColorStop(0, 'rgba(0, 240, 255, 0.14)');
-    nebulaGrad.addColorStop(0.5, 'rgba(236, 72, 153, 0.08)');
+    nebulaGrad.addColorStop(0, 'rgba(0, 240, 255, 0.12)');
+    nebulaGrad.addColorStop(0.5, 'rgba(236, 72, 153, 0.07)');
     nebulaGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = nebulaGrad;
     ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -176,7 +176,7 @@ export class SceneRenderer {
     moonGrad.addColorStop(1, '#ffee55');
     ctx.fillStyle = moonGrad;
     ctx.shadowColor = '#ff007f';
-    ctx.shadowBlur = 28;
+    ctx.shadowBlur = 26;
     ctx.fill();
 
     // Horizontal retro scanline cuts across moon
@@ -207,7 +207,6 @@ export class SceneRenderer {
       const curX = (c.x - this.cloudOffset * c.speed + WORLD_WIDTH * 2) % (WORLD_WIDTH + c.width) - c.width;
 
       ctx.fillStyle = `rgba(0, 240, 255, ${c.alpha})`;
-      // Layered pixel-block cloud
       ctx.fillRect(curX + 20, c.y, c.width - 40, c.height);
       ctx.fillRect(curX, c.y + 6, c.width, c.height - 10);
       ctx.fillRect(curX + 35, c.y - 6, c.width - 70, c.height + 12);
@@ -253,7 +252,6 @@ export class SceneRenderer {
       ctx.fillStyle = mtnGrad;
       ctx.fill();
 
-      // Cyber Cyan Edge Rim Light
       ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
       ctx.lineWidth = 1.6;
       ctx.stroke();
@@ -270,7 +268,6 @@ export class SceneRenderer {
       const startX = pass * WORLD_WIDTH - offset;
       ctx.fillStyle = '#081220';
 
-      // Repeating pine silhouettes
       for (let tx = startX; tx < startX + WORLD_WIDTH; tx += 28) {
         ctx.beginPath();
         ctx.moveTo(tx - 10, forestY);
@@ -311,7 +308,7 @@ export class SceneRenderer {
         ctx.fillStyle = build.color;
         ctx.fillRect(curX, baseY - build.h, build.w, build.h);
 
-        // Building antenna beacon
+        // Antenna
         ctx.strokeStyle = '#223055';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -323,7 +320,7 @@ export class SceneRenderer {
         ctx.fillStyle = blink ? '#ff0055' : '#00f0ff';
         ctx.fillRect(curX + build.w / 2 - 2, baseY - build.h - 24, 4, 4);
 
-        // Window grid
+        // Windows
         ctx.fillStyle = b % 2 === 0 ? 'rgba(0, 240, 255, 0.45)' : 'rgba(255, 215, 0, 0.38)';
         for (let wy = baseY - build.h + 22; wy < baseY - 12; wy += 17) {
           for (let wx = curX + 7; wx < curX + build.w - 7; wx += 14) {
@@ -333,7 +330,7 @@ export class SceneRenderer {
           }
         }
 
-        // Hologram billboard
+        // Billboard
         if (build.h > 245 && curX > -120 && curX < WORLD_WIDTH) {
           ctx.save();
           ctx.fillStyle = 'rgba(0, 240, 255, 0.16)';
@@ -354,8 +351,7 @@ export class SceneRenderer {
     ctx.restore();
   }
 
-  // Pseudo-3D Perspective Racing Highway with vanishing depth
-  private drawPerspectiveHighway(ctx: CanvasRenderingContext2D, gameTime: number) {
+  private drawPerspectiveHighway(ctx: CanvasRenderingContext2D) {
     ctx.save();
     const groundY = WORLD_HEIGHT - 46;
 
@@ -387,7 +383,7 @@ export class SceneRenderer {
       ctx.stroke();
     }
 
-    // Animated Racing Corridor Dashed Guide
+    // Animated Corridor Guideline
     ctx.strokeStyle = '#ff007f';
     ctx.shadowColor = '#ff007f';
     ctx.shadowBlur = 10;
@@ -400,7 +396,7 @@ export class SceneRenderer {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Upper Ceiling Safety Laser
+    // Ceiling safety line
     ctx.strokeStyle = 'rgba(255, 0, 80, 0.45)';
     ctx.shadowColor = '#ff0050';
     ctx.shadowBlur = 8;
@@ -433,7 +429,7 @@ export class SceneRenderer {
       // 2. BOTTOM PYLON (3D Shaded Structure)
       this.drawPylonStructure(ctx, ob.x, ob.bottomY, ob.width, ob.bottomHeight, false, ob);
 
-      // 3. FORCEFIELD ENERGY BEAM / LASER CORE
+      // 3. Forcefield Energy Beam
       const laserX = ob.x + ob.width / 2;
       const isBonus = ob.family === 'bonus_gate';
       const laserColor = isBonus
@@ -443,7 +439,6 @@ export class SceneRenderer {
         : 'rgba(255, 0, 127,';
 
       ctx.save();
-      // Outer aura
       ctx.strokeStyle = `${laserColor} ${0.25 * beamPulse})`;
       ctx.lineWidth = 14;
       ctx.beginPath();
@@ -451,17 +446,14 @@ export class SceneRenderer {
       ctx.lineTo(laserX, ob.bottomY);
       ctx.stroke();
 
-      // Middle bright beam
       ctx.strokeStyle = `${laserColor} ${0.75 * beamPulse})`;
       ctx.lineWidth = 6;
       ctx.stroke();
 
-      // Core white laser beam
       ctx.strokeStyle = `rgba(255, 255, 255, ${0.92 * beamPulse})`;
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Laser emitters nodes
       ctx.fillStyle = isBonus ? '#ffd700' : '#00f0ff';
       if (preset !== 'performance') {
         ctx.shadowColor = isBonus ? '#ffd700' : '#00f0ff';
@@ -473,7 +465,7 @@ export class SceneRenderer {
       ctx.fill();
       ctx.restore();
 
-      // 4. Warning Beacon for Oscillating or Tunnel Gates
+      // Warning beacon
       if (ob.warningBeacon && ob.x > WORLD_WIDTH * 0.4 && ob.x < WORLD_WIDTH) {
         ctx.save();
         const warnY = ob.topHeight + ob.gapSize / 2;
@@ -494,7 +486,6 @@ export class SceneRenderer {
     ctx.restore();
   }
 
-  // 3D-Shaded Pylon Structure with metallic bevels and directional lighting
   private drawPylonStructure(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -507,7 +498,6 @@ export class SceneRenderer {
     if (h <= 0) return;
 
     ctx.save();
-    // 3D Dimensional Bevel Gradient (light coming from top-left)
     const pylonGrad = ctx.createLinearGradient(x, 0, x + w, 0);
     pylonGrad.addColorStop(0, '#1e2844');
     pylonGrad.addColorStop(0.25, '#2e3d66');
@@ -517,12 +507,10 @@ export class SceneRenderer {
     ctx.fillStyle = pylonGrad;
     ctx.fillRect(x, y, w, h);
 
-    // Bevel highlights
     ctx.strokeStyle = ob.family === 'bonus_gate' ? '#ffd700' : ob.theme === 'laser' ? '#00f0ff' : '#ff007f';
     ctx.lineWidth = 1.6;
     ctx.strokeRect(x, y, w, h);
 
-    // Diagonal hazard caution chevrons
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, w, h);
@@ -546,7 +534,6 @@ export class SceneRenderer {
       ctx.fill();
     }
 
-    // High-tech vertical energy conduit
     const conduitX = x + w / 2;
     ctx.strokeStyle = ob.family === 'bonus_gate' ? 'rgba(255, 215, 0, 0.8)' : 'rgba(0, 240, 255, 0.8)';
     ctx.lineWidth = 3.5;
@@ -557,7 +544,6 @@ export class SceneRenderer {
 
     ctx.restore();
 
-    // Metallic cap at opening tip
     const capY = isTop ? y + h - 8 : y;
     ctx.fillStyle = ob.family === 'bonus_gate' ? '#ffd700' : '#00f0ff';
     ctx.fillRect(x + 3, capY, w - 6, 8);
@@ -580,7 +566,6 @@ export class SceneRenderer {
       const pulse = Math.sin(orb.pulsePhase) * 3;
       const r = orb.radius + pulse;
 
-      // Outer Radiant Glow Aura
       const glowGrad = ctx.createRadialGradient(orb.x, orb.y, 2, orb.x, orb.y, r * 3);
       if (isSuper) {
         glowGrad.addColorStop(0, 'rgba(255, 215, 0, 0.9)');
@@ -596,7 +581,6 @@ export class SceneRenderer {
       ctx.arc(orb.x, orb.y, r * 3, 0, Math.PI * 2);
       ctx.fill();
 
-      // Core Plasma Sphere
       const coreGrad = ctx.createRadialGradient(orb.x - 3, orb.y - 3, 1, orb.x, orb.y, r);
       if (isSuper) {
         coreGrad.addColorStop(0, '#ffffff');
@@ -612,7 +596,6 @@ export class SceneRenderer {
       ctx.arc(orb.x, orb.y, r, 0, Math.PI * 2);
       ctx.fill();
 
-      // Rotating Quantum Orbit Ring
       if (preset !== 'performance') {
         ctx.save();
         ctx.translate(orb.x, orb.y);
@@ -636,29 +619,42 @@ export class SceneRenderer {
       ctx.globalAlpha = alpha;
       ctx.fillStyle = p.color;
 
-      if (p.glow && preset !== 'performance') {
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 8;
-      }
-
-      if (p.shape === 'spark') {
-        ctx.fillRect(p.x, p.y, p.size * 1.8, p.size * 0.8);
-      } else if (p.shape === 'ring') {
-        ctx.strokeStyle = p.color;
-        ctx.lineWidth = 2;
+      if (p.shape === 'vapor') {
+        // Soft billowing white vapor clouds for quad underside air jets
+        const expandSize = p.size * (1 + (1 - alpha) * 2.2);
+        const vaporGrad = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, expandSize);
+        vaporGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.85})`);
+        vaporGrad.addColorStop(0.5, `rgba(230, 240, 250, ${alpha * 0.45})`);
+        vaporGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = vaporGrad;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (1 + (1 - alpha)), 0, Math.PI * 2);
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, expandSize, 0, Math.PI * 2);
         ctx.fill();
+      } else {
+        if (p.glow && preset !== 'performance') {
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+        }
+
+        if (p.shape === 'spark') {
+          ctx.fillRect(p.x, p.y, p.size * 1.8, p.size * 0.8);
+        } else if (p.shape === 'ring') {
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * (1 + (1 - alpha)), 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
     ctx.restore();
   }
 
-  // --- TESLA ROADSTER RENDERING (Pixel Velocity Aesthetic) ---
+  // --- REALISTIC METALLIC SILVER ROADSTER WITH 4 UNDERSIDE THRUSTER NOZZLES ---
   public drawRoadster(
     ctx: CanvasRenderingContext2D,
     car: PlayerCar,
@@ -672,202 +668,301 @@ export class SceneRenderer {
 
     const w = car.width;
     const h = car.height;
+    const thrust = car.thrustPower; // 0.0 to 1.0
 
-    // 1. Neon Underglow Reflection
-    ctx.save();
-    ctx.fillStyle = skin.glowColor;
-    if (preset !== 'performance') {
-      ctx.shadowColor = skin.glowColor;
-      ctx.shadowBlur = 18;
-    }
-    ctx.globalAlpha = 0.45 + (car.isBoosting ? 0.35 : 0);
-    ctx.beginPath();
-    ctx.ellipse(0, h * 0.4, w * 0.55, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // 2. SpaceX Rocket Thruster Plume & Shock Diamonds
-    if (car.isBoosting) {
+    // =========================================================================
+    // 1. FOUR INDIVIDUAL WHITE DOWNWARD AIR JETS (STREAMING FROM UNDERSIDE NOZZLES)
+    // =========================================================================
+    if (thrust > 0.02) {
       ctx.save();
-      const flameLength = 32 + Math.random() * 14;
-      const flameGrad = ctx.createLinearGradient(-w * 0.45, 4, -w * 0.45 - flameLength, 4);
-      flameGrad.addColorStop(0, '#ffffff');
-      flameGrad.addColorStop(0.2, '#00f0ff');
-      flameGrad.addColorStop(0.65, '#ff007f');
-      flameGrad.addColorStop(1, 'rgba(255, 0, 127, 0)');
 
-      ctx.fillStyle = flameGrad;
-      if (preset !== 'performance') {
-        ctx.shadowColor = '#00f0ff';
-        ctx.shadowBlur = 16;
-      }
+      // Soft ambient white underglow reflecting off the ground and bottom of chassis
+      const underglowGrad = ctx.createRadialGradient(0, 18, 5, 0, 24, w * 0.6);
+      underglowGrad.addColorStop(0, `rgba(255, 255, 255, ${0.4 * thrust})`);
+      underglowGrad.addColorStop(0.5, `rgba(225, 238, 255, ${0.18 * thrust})`);
+      underglowGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = underglowGrad;
+      ctx.fillRect(-w * 0.5, 9, w, 40);
 
-      ctx.beginPath();
-      ctx.moveTo(-w * 0.45, 1);
-      ctx.lineTo(-w * 0.45 - flameLength, 4);
-      ctx.lineTo(-w * 0.45, 7);
-      ctx.closePath();
-      ctx.fill();
+      // Render all 4 separate white air jets
+      NOZZLE_OFFSETS.forEach((offset, idx) => {
+        const nx = offset.x * w;
+        const ny = offset.y;
 
-      // Shock Diamonds
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
-      for (let d = 8; d < flameLength - 6; d += 8) {
+        // Individual jet length with high-frequency micro-flicker
+        const microFlicker = Math.sin(gameTime * 48 + idx * 2.2) * 4;
+        const jetLength = (36 + idx % 2 * 6 + microFlicker) * thrust;
+        const jetWidth = 6.5 * thrust;
+
+        // A. Outer Expanding Vapor Cone (soft white / pale sky grey)
+        const outerGrad = ctx.createLinearGradient(nx, ny, nx, ny + jetLength);
+        outerGrad.addColorStop(0, `rgba(255, 255, 255, ${0.85 * thrust})`);
+        outerGrad.addColorStop(0.3, `rgba(235, 245, 255, ${0.65 * thrust})`);
+        outerGrad.addColorStop(0.7, `rgba(215, 230, 245, ${0.35 * thrust})`);
+        outerGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.fillStyle = outerGrad;
         ctx.beginPath();
-        ctx.ellipse(-w * 0.45 - d, 4, 2, 4, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
+        ctx.moveTo(nx - jetWidth * 0.45, ny);
+        ctx.lineTo(nx + jetWidth * 0.45, ny);
+        ctx.lineTo(nx + jetWidth * 1.5, ny + jetLength);
+        ctx.lineTo(nx - jetWidth * 1.5, ny + jetLength);
+        ctx.closePath();
+        ctx.fill();
+
+        // B. Intense Solid White Core Jet Beam
+        const coreGrad = ctx.createLinearGradient(nx, ny, nx, ny + jetLength * 0.65);
+        coreGrad.addColorStop(0, '#ffffff');
+        coreGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.95)');
+        coreGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.moveTo(nx - 2, ny);
+        ctx.lineTo(nx + 2, ny);
+        ctx.lineTo(nx + 1, ny + jetLength * 0.65);
+        ctx.lineTo(nx - 1, ny + jetLength * 0.65);
+        ctx.closePath();
+        ctx.fill();
+
+        // C. Nozzle Ignition Glow Dot
+        ctx.fillStyle = '#ffffff';
+        if (preset !== 'performance') {
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 8;
+        }
+        ctx.beginPath();
+        ctx.arc(nx, ny + 1, 2.5 * thrust, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
       ctx.restore();
     }
 
-    // 3. Main Roadster Body - Metallic Multi-Coat Paint Finish
+    // =========================================================================
+    // 2. THE FOUR VISIBLE UNDERSIDE THRUSTER NOZZLES (HARDWARE HOUSINGS)
+    // =========================================================================
     ctx.save();
+    NOZZLE_OFFSETS.forEach((offset) => {
+      const nx = offset.x * w;
+      const ny = offset.y;
+
+      // Dark metallic nozzle housing bracket
+      ctx.fillStyle = '#1c212a';
+      ctx.fillRect(nx - 3.5, ny - 3.5, 7, 4.5);
+
+      // Beveled titanium rim
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(nx - 3.5, ny - 3.5, 7, 4.5);
+
+      // Circular downward exhaust orifice
+      ctx.fillStyle = thrust > 0.05 ? '#ffffff' : '#0c0e14';
+      ctx.beginPath();
+      ctx.ellipse(nx, ny + 0.5, 2.8, 1.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+
+    // =========================================================================
+    // 3. MAIN ROADSTER BODY — REALISTIC METALLIC SILVER / TITANIUM PROFILE
+    // =========================================================================
+    ctx.save();
+
+    // Determine paint finish colors (Default is Titanium Silver)
+    const isDefaultSilver = !skin || skin.id === 'roadster_silver' || skin.id === 'silver_streak';
+    const mainBodyBase = isDefaultSilver ? '#cbd5e1' : skin.bodyColor;
+    const mainBodyHighlight = isDefaultSilver ? '#f8fafc' : skin.accentColor;
+    const mainBodyShadow = isDefaultSilver ? '#94a3b8' : '#334155';
+
+    // A. Lower Graphite / Carbon Rocker Panel & Aero Splitters
     ctx.beginPath();
-    ctx.moveTo(-w * 0.45, 8);
-    ctx.lineTo(-w * 0.46, -2);
-    ctx.lineTo(-w * 0.42, -5);
-    ctx.quadraticCurveTo(-w * 0.28, -6, -w * 0.15, -7);
-    ctx.quadraticCurveTo(0, -14, w * 0.15, -7);
-    ctx.quadraticCurveTo(w * 0.35, -4, w * 0.48, 2);
-    ctx.lineTo(w * 0.49, 6);
-    ctx.lineTo(w * 0.44, 9);
-    ctx.lineTo(w * 0.28, 9);
-    ctx.lineTo(-w * 0.18, 9);
-    ctx.lineTo(-w * 0.32, 9);
+    ctx.moveTo(-w * 0.46, 7.5);
+    ctx.lineTo(w * 0.48, 7.5);
+    ctx.lineTo(w * 0.45, 9.5);
+    ctx.lineTo(-w * 0.44, 9.5);
+    ctx.closePath();
+    ctx.fillStyle = '#1e2430';
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // B. Main Sculpted Aerodynamic Body
+    ctx.beginPath();
+    // Rear diffuser edge
+    ctx.moveTo(-w * 0.46, 7.5);
+    // Rear bumper upward sweep
+    ctx.lineTo(-w * 0.47, -1.5);
+    // Rear ducktail aerodynamic spoiler lip
+    ctx.lineTo(-w * 0.44, -4.5);
+    // Rear fastback deck contour
+    ctx.quadraticCurveTo(-w * 0.28, -6.5, -w * 0.16, -7.5);
+    // Swept panoramic glass canopy roofline
+    ctx.quadraticCurveTo(0, -14.5, w * 0.16, -7.5);
+    // Low sweeping wedge hood terminating at sharp nose
+    ctx.quadraticCurveTo(w * 0.36, -4, w * 0.49, 1.5);
+    // Front aero nose tip
+    ctx.lineTo(w * 0.50, 4.5);
+    // Front chin splitter
+    ctx.lineTo(w * 0.45, 7.5);
+    // Front wheel cutout
+    ctx.lineTo(w * 0.32, 7.5);
+    ctx.arc(w * 0.24, 7.5, 8.5, 0, Math.PI, true);
+    // Underside rocker panel between wheels
+    ctx.lineTo(-w * 0.16, 7.5);
+    // Rear wheel cutout
+    ctx.arc(-w * 0.24, 7.5, 8.5, 0, Math.PI, true);
+    ctx.lineTo(-w * 0.46, 7.5);
     ctx.closePath();
 
-    const paintGrad = ctx.createLinearGradient(0, -14, 0, 9);
-    paintGrad.addColorStop(0, skin.accentColor);
-    paintGrad.addColorStop(0.35, skin.bodyColor);
-    paintGrad.addColorStop(0.7, skin.bodyColor);
-    paintGrad.addColorStop(1, '#090a10');
-    ctx.fillStyle = paintGrad;
-    if (preset !== 'performance') {
-      ctx.shadowColor = skin.glowColor;
-      ctx.shadowBlur = 8;
-    }
+    // Multi-stage Metallic Silver Gradient with specular sheen
+    const bodyGrad = ctx.createLinearGradient(0, -14.5, 0, 9.5);
+    bodyGrad.addColorStop(0, mainBodyHighlight);
+    bodyGrad.addColorStop(0.35, mainBodyBase);
+    bodyGrad.addColorStop(0.7, mainBodyBase);
+    bodyGrad.addColorStop(1, mainBodyShadow);
+    ctx.fillStyle = bodyGrad;
     ctx.fill();
 
-    // Metallic Sheen Highlight
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    // Subtle metallic contour edge line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // 4. Specular Sunlight Glint across shoulder
+    // C. Shoulder Specular Light Reflection (Along the door and fender)
     ctx.beginPath();
-    ctx.moveTo(-w * 0.38, -3);
-    ctx.quadraticCurveTo(0, -6, w * 0.42, 1);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.lineWidth = 1.6;
+    ctx.moveTo(-w * 0.40, -2.5);
+    ctx.quadraticCurveTo(0, -5.5, w * 0.43, 0.5);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // 5. Panoramic Glass Canopy (Black Tint with Cyan Skylight Reflection)
+    // D. Subtle Door Shut Line & Body Panel Seams
     ctx.beginPath();
-    ctx.moveTo(-w * 0.18, -6);
-    ctx.quadraticCurveTo(0, -12, w * 0.13, -6);
-    ctx.lineTo(w * 0.18, -3);
-    ctx.lineTo(-w * 0.15, -3);
+    ctx.moveTo(w * 0.05, -6.5);
+    ctx.lineTo(w * 0.03, 6.5);
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Hood character crease line
+    ctx.beginPath();
+    ctx.moveTo(w * 0.17, -5);
+    ctx.lineTo(w * 0.42, 0.5);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+
+    // E. Panoramic Tinted Glass Canopy with Sky Reflections
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.19, -6.5);
+    ctx.quadraticCurveTo(0, -13, w * 0.14, -6.5);
+    ctx.lineTo(w * 0.19, -3.5);
+    ctx.lineTo(-w * 0.16, -3.5);
     ctx.closePath();
 
-    const glassGrad = ctx.createLinearGradient(0, -12, 0, -3);
-    glassGrad.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
-    glassGrad.addColorStop(0.4, 'rgba(15, 25, 45, 0.95)');
-    glassGrad.addColorStop(1, 'rgba(5, 8, 15, 0.98)');
-    ctx.fillStyle = glassGrad;
+    const canopyGrad = ctx.createLinearGradient(0, -13, 0, -3.5);
+    canopyGrad.addColorStop(0, 'rgba(215, 235, 255, 0.85)');
+    canopyGrad.addColorStop(0.35, 'rgba(15, 23, 42, 0.96)');
+    canopyGrad.addColorStop(1, 'rgba(6, 9, 18, 0.98)');
+    ctx.fillStyle = canopyGrad;
     ctx.fill();
 
-    // Canopy Glare Slash
+    // Glass glare slash
     ctx.beginPath();
-    ctx.moveTo(-w * 0.05, -10);
-    ctx.lineTo(w * 0.05, -5);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.moveTo(-w * 0.04, -11);
+    ctx.lineTo(w * 0.06, -5.5);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.lineWidth = 1.3;
     ctx.stroke();
 
-    // 6. Signature Front LED Headlight Blade & Forward Light Cone
+    // F. Front Narrow LED Light Strip (Pure Icy-White DRL)
     ctx.beginPath();
-    ctx.moveTo(w * 0.44, 2);
-    ctx.lineTo(w * 0.48, 3);
-    ctx.lineTo(w * 0.42, 5);
-    ctx.strokeStyle = '#00f0ff';
+    ctx.moveTo(w * 0.45, 1.5);
+    ctx.lineTo(w * 0.49, 2.5);
+    ctx.lineTo(w * 0.44, 4);
+    ctx.strokeStyle = '#f8fafc';
     if (preset !== 'performance') {
-      ctx.shadowColor = '#00f0ff';
-      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#f8fafc';
+      ctx.shadowBlur = 10;
     }
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2.2;
     ctx.stroke();
 
-    // Forward Illumination Beam
-    const beamGrad = ctx.createLinearGradient(w * 0.48, 3, w * 0.48 + 65, 4);
-    beamGrad.addColorStop(0, 'rgba(0, 240, 255, 0.45)');
-    beamGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+    // Subtle forward headlight illumination cone
+    const beamGrad = ctx.createLinearGradient(w * 0.49, 2.5, w * 0.49 + 60, 3.5);
+    beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+    beamGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = beamGrad;
     ctx.beginPath();
-    ctx.moveTo(w * 0.48, 3);
-    ctx.lineTo(w * 0.48 + 65, -3);
-    ctx.lineTo(w * 0.48 + 65, 10);
+    ctx.moveTo(w * 0.49, 2.5);
+    ctx.lineTo(w * 0.49 + 60, -3);
+    ctx.lineTo(w * 0.49 + 60, 9);
     ctx.closePath();
     ctx.fill();
+    ctx.shadowBlur = 0;
 
-    // 7. Signature Rear Full-Width Curved Red LED Taillight Strip
+    // G. Curved Red Rear LED Taillight Blade
     ctx.beginPath();
-    ctx.moveTo(-w * 0.44, -2);
-    ctx.lineTo(-w * 0.46, 2);
-    ctx.strokeStyle = '#ff0033';
+    ctx.moveTo(-w * 0.45, -2);
+    ctx.lineTo(-w * 0.47, 1.5);
+    ctx.strokeStyle = '#ef4444';
     if (preset !== 'performance') {
-      ctx.shadowColor = '#ff0033';
-      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 8;
     }
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2.2;
     ctx.stroke();
+    ctx.shadowBlur = 0;
 
-    // 8. Spinning Turbine Aero Wheels
-    this.drawAeroWheel(ctx, w * 0.26, 8, gameTime);
-    this.drawAeroWheel(ctx, -w * 0.28, 8, gameTime);
-
-    // 9. SpaceX Thruster Nozzle
-    ctx.fillStyle = '#222533';
-    ctx.fillRect(-w * 0.48, 2, 3, 5);
-    ctx.strokeStyle = '#00f0ff';
-    ctx.lineWidth = 0.8;
-    ctx.strokeRect(-w * 0.48, 2, 3, 5);
+    // H. Detailed Black Alloy Turbine Wheels
+    this.drawDetailedAlloyWheel(ctx, w * 0.24, 7.5, gameTime);
+    this.drawDetailedAlloyWheel(ctx, -w * 0.24, 7.5, gameTime);
 
     ctx.restore();
     ctx.restore();
   }
 
-  private drawAeroWheel(ctx: CanvasRenderingContext2D, x: number, y: number, gameTime: number) {
+  // Realistic Detailed Black Alloy Turbine Wheel
+  private drawDetailedAlloyWheel(ctx: CanvasRenderingContext2D, x: number, y: number, gameTime: number) {
     ctx.save();
     ctx.translate(x, y);
 
-    // Outer tire
-    ctx.fillStyle = '#090c14';
+    // Outer performance rubber tire
+    ctx.fillStyle = '#0a0d14';
     ctx.beginPath();
-    ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
+    ctx.arc(0, 0, 8, 0, Math.PI * 2);
     ctx.fill();
 
-    // Wheel rim
-    ctx.fillStyle = '#1c2234';
-    ctx.beginPath();
-    ctx.arc(0, 0, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Turbine spokes spinning
-    ctx.rotate(-gameTime * 26);
-    ctx.strokeStyle = '#00f0ff';
+    // Outer tire tread rim
+    ctx.strokeStyle = '#1e2430';
     ctx.lineWidth = 1;
-    for (let s = 0; s < 4; s++) {
-      ctx.rotate(Math.PI / 2);
+    ctx.stroke();
+
+    // Graphite wheel rim lip
+    ctx.fillStyle = '#181d26';
+    ctx.beginPath();
+    ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spinning multi-spoke turbine blades
+    ctx.rotate(-gameTime * 28);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.1;
+    for (let s = 0; s < 5; s++) {
+      ctx.rotate((Math.PI * 2) / 5);
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(0, 4.5);
+      ctx.lineTo(0, 5);
       ctx.stroke();
     }
 
-    // Center cap
-    ctx.fillStyle = '#ffffff';
+    // Center metallic hub cap
+    ctx.fillStyle = '#e2e8f0';
     ctx.beginPath();
-    ctx.arc(0, 0, 1.2, 0, Math.PI * 2);
+    ctx.arc(0, 0, 1.4, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();

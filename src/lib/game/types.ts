@@ -33,6 +33,7 @@ export interface PlayerCar {
   rotation: number;
   targetRotation: number;
   isBoosting: boolean;
+  thrustPower: number; // 0.0 to 1.0 for dynamic plume length & brightness
   boostEnergy: number;
   trail: Array<{ x: number; y: number; alpha: number; size: number }>;
 }
@@ -79,7 +80,7 @@ export interface Particle {
   color: string;
   size: number;
   glow: boolean;
-  shape?: 'circle' | 'spark' | 'smoke' | 'ring' | 'diamond';
+  shape?: 'circle' | 'spark' | 'smoke' | 'ring' | 'diamond' | 'vapor';
 }
 
 export interface FloatingText {

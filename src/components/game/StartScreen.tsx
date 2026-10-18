@@ -145,9 +145,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({
           </button>
         )}
 
-        {/* Tagline */}
         <p className="mt-3 text-xs sm:text-sm text-slate-400 max-w-md font-mono tracking-wide">
-          TAP TO BOOST. GLIDE TO SURVIVE. DODGE ENERGY GATES.
+          HOLD OR TAP TO FIRE QUAD THRUSTERS. GLIDE TO SURVIVE.
         </p>
 
         {/* Primary Action Buttons */}

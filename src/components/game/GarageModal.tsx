@@ -31,7 +31,7 @@ export const GarageModal: React.FC<GarageModalProps> = ({
             <div>
               <h2 className="text-xl font-bold font-mono text-white">ROADSTER GARAGE</h2>
               <p className="text-xs font-mono text-slate-400">
-                Custom paint finishes & SpaceX cold gas thrusters
+                Metallic hypercar finishes & quad cold-gas underside thrusters
               </p>
             </div>
           </div>

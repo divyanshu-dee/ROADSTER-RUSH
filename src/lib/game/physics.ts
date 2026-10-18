@@ -6,24 +6,26 @@ export const WORLD_HEIGHT = 600;
 
 export const PHYSICS_CONFIG = {
   arcade: {
-    gravity: 1050,         // pixels/s^2 downwards
-    boostImpulse: -370,    // instant vertical velocity impulse
-    maxFallSpeed: 580,     // terminal downward velocity
-    maxRiseSpeed: -450,    // terminal upward velocity
+    gravity: 1020,               // pixels/s^2 downwards
+    tapImpulse: -260,            // immediate upward impulse on press
+    continuousThrustAccel: 1450, // continuous upward acceleration while holding
+    maxFallSpeed: 560,           // terminal downward velocity
+    maxRiseSpeed: -380,          // safe terminal upward velocity
   },
   casual: {
-    gravity: 860,          // softer gravity for casual / forgiving flight
-    boostImpulse: -330,    // gentler impulse
-    maxFallSpeed: 480,
-    maxRiseSpeed: -390,
+    gravity: 840,
+    tapImpulse: -230,
+    continuousThrustAccel: 1250,
+    maxFallSpeed: 460,
+    maxRiseSpeed: -320,
   },
-  carWidth: 64,
-  carHeight: 26,
+  carWidth: 72,
+  carHeight: 25,
   carStartX: 180,
   carStartY: 270,
-  rotationSmoothness: 8.5, // lerp speed for pitch
-  maxUpAngle: -0.38,       // ~ -22 degrees nose up
-  maxDownAngle: 0.58,      // ~ +33 degrees nose down
+  rotationSmoothness: 8.5,
+  maxUpAngle: -0.28,             // ~ -16 degrees nose up
+  maxDownAngle: 0.52,            // ~ +30 degrees nose down
 };
 
 export function createInitialCar(): PlayerCar {
@@ -37,15 +39,39 @@ export function createInitialCar(): PlayerCar {
     rotation: 0,
     targetRotation: 0,
     isBoosting: false,
+    thrustPower: 0,
     boostEnergy: 100,
     trail: [],
   };
 }
 
+// Underside nozzles relative to vehicle center (width = 72, height = 25)
+export const NOZZLE_OFFSETS = [
+  { x: 0.18, y: 8.5 },   // Front-Outer Nozzle
+  { x: 0.06, y: 8.5 },   // Front-Inner Nozzle
+  { x: -0.06, y: 8.5 },  // Rear-Inner Nozzle
+  { x: -0.18, y: 8.5 },  // Rear-Outer Nozzle
+];
+
+export function getNozzleWorldPositions(car: PlayerCar): Array<{ x: number; y: number }> {
+  const cosR = Math.cos(car.rotation);
+  const sinR = Math.sin(car.rotation);
+
+  return NOZZLE_OFFSETS.map((offset) => {
+    const lx = offset.x * car.width;
+    const ly = offset.y;
+    return {
+      x: car.x + lx * cosR - ly * sinR,
+      y: car.y + lx * sinR + ly * cosR,
+    };
+  });
+}
+
 export function updateCarPhysics(
   car: PlayerCar,
   dt: number,
-  isBoostTriggered: boolean,
+  isBoostActive: boolean,
+  isInitialPress: boolean,
   controlProfile: ControlProfile = 'arcade',
   onSpawnParticles?: (particles: Particle[]) => void
 ): void {
@@ -53,88 +79,85 @@ export function updateCarPhysics(
   const clampedDt = Math.min(dt, 0.05);
   const cfg = PHYSICS_CONFIG[controlProfile] || PHYSICS_CONFIG.arcade;
 
-  // Apply Boost or Gravity
-  if (isBoostTriggered) {
-    car.vy = cfg.boostImpulse;
-    car.targetRotation = PHYSICS_CONFIG.maxUpAngle;
-    car.isBoosting = true;
+  // 1. Initial Press Impulse
+  if (isInitialPress) {
+    // If currently falling or slow, give immediate crisp upward lift
+    car.vy = Math.min(car.vy, -160) + cfg.tapImpulse * 0.75;
+  }
 
-    // Spawn dramatic SpaceX cold gas rocket booster thruster particles
+  // 2. Continuous Lift while holding Boost
+  if (isBoostActive) {
+    car.isBoosting = true;
+    car.vy -= cfg.continuousThrustAccel * clampedDt;
+    car.targetRotation = PHYSICS_CONFIG.maxUpAngle;
+    car.thrustPower += (1 - car.thrustPower) * Math.min(1, clampedDt * 16);
+
+    // Spawn distinct white compressed air / vapor particles from each of the 4 nozzles
     if (onSpawnParticles) {
-      const thrusterX = car.x - car.width * 0.45;
-      const thrusterY = car.y + 4;
+      const nozzleWorldPositions = getNozzleWorldPositions(car);
       const particles: Particle[] = [];
 
-      // Core plasma flare
-      particles.push({
-        x: thrusterX,
-        y: thrusterY,
-        vx: -120,
-        vy: 0,
-        life: 0.18,
-        maxLife: 0.18,
-        color: '#ffffff',
-        size: 14,
-        glow: true,
-        shape: 'ring',
-      });
+      for (let n = 0; n < nozzleWorldPositions.length; n++) {
+        const nozzle = nozzleWorldPositions[n];
 
-      // Jet sparks and shock diamonds
-      for (let i = 0; i < 6; i++) {
-        const angle = Math.PI + (Math.random() - 0.5) * 0.4;
-        const speed = 280 + Math.random() * 220;
+        // Downward jet vapor puff
+        const spreadAngle = Math.PI / 2 + car.rotation + (Math.random() - 0.5) * 0.25;
+        const speed = 180 + Math.random() * 140;
+
         particles.push({
-          x: thrusterX + (Math.random() - 0.5) * 4,
-          y: thrusterY + (Math.random() - 0.5) * 4,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed + car.vy * 0.15,
-          life: 0.25 + Math.random() * 0.2,
-          maxLife: 0.45,
-          color: Math.random() > 0.35 ? '#00f0ff' : '#ff007f', // Electric cyan & magenta
-          size: 3 + Math.random() * 5,
+          x: nozzle.x + (Math.random() - 0.5) * 3,
+          y: nozzle.y,
+          vx: Math.cos(spreadAngle) * speed - 50, // Slight backward drift from forward flight
+          vy: Math.sin(spreadAngle) * speed,     // Strongly downward
+          life: 0.25 + Math.random() * 0.18,
+          maxLife: 0.42,
+          color: Math.random() > 0.35 ? '#ffffff' : '#e2e8f0', // Crisp white & pale vapor
+          size: 3 + Math.random() * 3,
           glow: true,
-          shape: 'spark',
+          shape: 'vapor',
         });
       }
+
       onSpawnParticles(particles);
     }
   } else {
-    // Gravity pulls down
-    car.vy += cfg.gravity * clampedDt;
+    // Boost Released: Gravity takes over naturally
     car.isBoosting = false;
+    car.vy += cfg.gravity * clampedDt;
+    car.thrustPower += (0 - car.thrustPower) * Math.min(1, clampedDt * 8);
 
-    // Pitch towards ground as velocity increases
-    if (car.vy > 40) {
-      const dropFactor = Math.min(1, (car.vy - 40) / 380);
+    // Pitch attitude reflects velocity
+    if (car.vy > 50) {
+      const dropFactor = Math.min(1, (car.vy - 50) / 380);
       car.targetRotation = dropFactor * PHYSICS_CONFIG.maxDownAngle;
     } else {
       car.targetRotation = (car.vy / 370) * PHYSICS_CONFIG.maxUpAngle;
     }
   }
 
-  // Velocity clamp
+  // 3. Velocity clamp
   car.vy = Math.max(cfg.maxRiseSpeed, Math.min(cfg.maxFallSpeed, car.vy));
 
-  // Position update
+  // 4. Position update
   car.y += car.vy * clampedDt;
 
-  // Rotation lerp
+  // 5. Rotation lerp
   car.rotation += (car.targetRotation - car.rotation) * Math.min(1, clampedDt * PHYSICS_CONFIG.rotationSmoothness);
 
-  // Subtle trail tracking
+  // 6. Subtle aerodynamic trail
   car.trail.unshift({
-    x: car.x - car.width * 0.4,
-    y: car.y + 4,
-    alpha: 0.65,
-    size: 7,
+    x: car.x - car.width * 0.42,
+    y: car.y + 2,
+    alpha: 0.55,
+    size: 5,
   });
 
-  if (car.trail.length > 9) {
+  if (car.trail.length > 8) {
     car.trail.pop();
   }
 
   for (let i = 0; i < car.trail.length; i++) {
-    car.trail[i].alpha *= 0.84;
+    car.trail[i].alpha *= 0.82;
     car.trail[i].size *= 0.88;
   }
 }

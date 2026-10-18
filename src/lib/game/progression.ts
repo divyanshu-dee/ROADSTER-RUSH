@@ -8,72 +8,72 @@ import {
 
 export const CAR_SKINS: CarSkin[] = [
   {
-    id: 'roadster_red',
-    name: 'Plasma Red',
-    description: 'Signature multi-coat hypercar red with carbon aero splitter',
-    bodyColor: '#e82127',
-    accentColor: '#ff4d52',
-    glowColor: '#ff2222',
+    id: 'roadster_silver',
+    name: 'Titanium Silver',
+    description: 'Flagship aerodynamic metallic silver with quad underside cold-gas thrusters',
+    bodyColor: '#cbd5e1',
+    accentColor: '#f8fafc',
+    glowColor: '#e2e8f0',
     unlocked: true,
-    unlockCondition: 'Unlocked by default',
+    unlockCondition: 'Flagship Edition (Default)',
     requirementType: 'default',
     requirementValue: 0,
   },
   {
-    id: 'silver_streak',
-    name: 'Silver Streak',
-    description: 'Liquid metallic mercury finish with electric cyan aerospace trim',
-    bodyColor: '#d1d5db',
-    accentColor: '#00f0ff',
-    glowColor: '#38bdf8',
+    id: 'roadster_graphite',
+    name: 'Graphite Plaid',
+    description: 'Deep metallic carbon-grey with matte aerodynamic diffusers',
+    bodyColor: '#475569',
+    accentColor: '#94a3b8',
+    glowColor: '#cbd5e1',
     unlocked: false,
     unlockCondition: 'Score 10+ in a single flight',
     requirementType: 'score',
     requirementValue: 10,
   },
   {
-    id: 'cyber_cyan',
-    name: 'Neo Cyan',
-    description: 'Radioactive neon cyan chassis with radioactive magenta underglow',
-    bodyColor: '#00f0ff',
-    accentColor: '#ff007f',
-    glowColor: '#00f0ff',
+    id: 'roadster_mercury',
+    name: 'Liquid Platinum',
+    description: 'Hyper-reflective polished mercury mirror finish with pale cyan trim',
+    bodyColor: '#e2e8f0',
+    accentColor: '#00f0ff',
+    glowColor: '#38bdf8',
     unlocked: false,
     unlockCondition: 'Score 20+ in a single flight',
     requirementType: 'score',
     requirementValue: 20,
   },
   {
-    id: 'stealth_matte',
-    name: 'Midnight Plaid',
-    description: 'Matte carbon black weave with crimson cyber edge piping',
-    bodyColor: '#16161e',
-    accentColor: '#ff2d55',
-    glowColor: '#ff375f',
+    id: 'roadster_onyx',
+    name: 'Midnight Onyx',
+    description: 'Sleek stealth obsidian black with dark tinted glass canopy',
+    bodyColor: '#1e293b',
+    accentColor: '#64748b',
+    glowColor: '#94a3b8',
     unlocked: false,
     unlockCondition: 'Collect 25 total Energy Orbs',
     requirementType: 'orbs',
     requirementValue: 25,
   },
   {
-    id: 'solar_flare',
-    name: 'Solar Flare Gold',
-    description: 'Polished hyper-reflective gold mirror with solar plasma thrusters',
-    bodyColor: '#ffd700',
-    accentColor: '#ff8c00',
-    glowColor: '#ffae19',
+    id: 'roadster_red',
+    name: 'Signature Red',
+    description: 'Iconic multi-coat metallic crimson sports finish',
+    bodyColor: '#dc2626',
+    accentColor: '#f87171',
+    glowColor: '#fca5a5',
     unlocked: false,
     unlockCondition: 'Score 35+ in a single flight',
     requirementType: 'score',
     requirementValue: 35,
   },
   {
-    id: 'vaporwave',
-    name: 'Synthwave Sunset',
-    description: 'Dual-tone violet-to-peach gradient with laser reflection sheen',
-    bodyColor: '#a855f7',
-    accentColor: '#f43f5e',
-    glowColor: '#ec4899',
+    id: 'roadster_solar',
+    name: 'Solar Flare Gold',
+    description: 'Polished hyper-reflective gold mirror with solar accents',
+    bodyColor: '#eab308',
+    accentColor: '#fde047',
+    glowColor: '#fef08a',
     unlocked: false,
     unlockCondition: 'Complete 15 total flight runs',
     requirementType: 'runs',
@@ -218,8 +218,8 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
-const STATS_STORAGE_KEY = 'roadster_rush_player_stats_v2';
-const SETTINGS_STORAGE_KEY = 'roadster_rush_settings_v2';
+const STATS_STORAGE_KEY = 'roadster_rush_player_stats_v3';
+const SETTINGS_STORAGE_KEY = 'roadster_rush_settings_v3';
 
 export function getTodayDateString(): string {
   const d = new Date();
@@ -244,8 +244,8 @@ export function loadPlayerStats(): PlayerStats {
     totalRuns: 0,
     totalOrbs: 0,
     gatesPassed: 0,
-    selectedSkinId: 'roadster_red',
-    unlockedSkins: ['roadster_red'],
+    selectedSkinId: 'roadster_silver',
+    unlockedSkins: ['roadster_silver'],
     achievements: {},
     completedChallenges: {},
     tutorialCompleted: false,
@@ -257,6 +257,12 @@ export function loadPlayerStats(): PlayerStats {
     const raw = localStorage.getItem(STATS_STORAGE_KEY);
     if (!raw) return defaults;
     const parsed = JSON.parse(raw);
+    const unlockedSkins: string[] =
+      Array.isArray(parsed.unlockedSkins) && parsed.unlockedSkins.length ? parsed.unlockedSkins : ['roadster_silver'];
+    if (!unlockedSkins.includes('roadster_silver')) {
+      unlockedSkins.unshift('roadster_silver');
+    }
+
     return {
       highScore: Number(parsed.highScore) || 0,
       bestDistance: Number(parsed.bestDistance) || 0,
@@ -264,8 +270,8 @@ export function loadPlayerStats(): PlayerStats {
       totalRuns: Number(parsed.totalRuns) || 0,
       totalOrbs: Number(parsed.totalOrbs) || 0,
       gatesPassed: Number(parsed.gatesPassed) || 0,
-      selectedSkinId: parsed.selectedSkinId || 'roadster_red',
-      unlockedSkins: Array.isArray(parsed.unlockedSkins) && parsed.unlockedSkins.length ? parsed.unlockedSkins : ['roadster_red'],
+      selectedSkinId: parsed.selectedSkinId || 'roadster_silver',
+      unlockedSkins,
       achievements: parsed.achievements || {},
       completedChallenges: parsed.completedChallenges || {},
       lastDailyDate: parsed.lastDailyDate,

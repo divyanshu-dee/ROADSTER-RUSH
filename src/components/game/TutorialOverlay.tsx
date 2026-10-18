@@ -13,10 +13,10 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ onDismiss }) =
 
   const steps = [
     {
-      title: 'ENGAGE ROCKET THRUSTERS',
-      subtitle: 'SpaceX Cold Gas Propulsion',
+      title: 'QUAD UNDERSIDE AIR THRUSTERS',
+      subtitle: 'SpaceX Cold Gas Propulsion System',
       description:
-        'Tap the screen, click your mouse, or press SPACE / ARROW UP to fire your rocket thrusters. Releasing the control allows aerodynamics and gravity to glide downward.',
+        'Press or hold SPACE, ARROW UP, click, or tap to fire four downward white air jets beneath the chassis. Continuous thrust generates vertical lift. Releasing the control allows aerodynamics and gravity to glide downward.',
       icon: <Flame className="w-8 h-8 text-cyan-400" />,
       badge: 'Step 1 of 3',
       color: 'from-cyan-500/20 to-blue-500/10 border-cyan-500/40',
@@ -34,7 +34,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ onDismiss }) =
       title: 'HARVEST PLASMA CORES',
       subtitle: 'Bonus Score & Hypercar Unlocks',
       description:
-        'Collect floating golden and cyan energy orbs to boost your score and unlock exclusive Roadster finishes like Silver Streak, Neo Cyan, and Midnight Plaid.',
+        'Collect floating golden and cyan energy orbs to boost your score and unlock exclusive Roadster finishes like Titanium Silver, Graphite Plaid, and Liquid Platinum.',
       icon: <Sparkles className="w-8 h-8 text-amber-400" />,
       badge: 'Step 3 of 3',
       color: 'from-amber-500/20 to-yellow-500/10 border-amber-500/40',
