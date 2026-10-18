@@ -22,6 +22,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: '#00f0ff',
+  viewportFit: 'cover',
 };
 
 export const metadata: Metadata = {
@@ -36,6 +37,14 @@ export const metadata: Metadata = {
     description: 'Fly the Tesla Roadster with SpaceX cold gas thrusters through a cyberpunk neon gauntlet!',
     type: 'website',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Roadster Rush',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -48,8 +57,9 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="h-full w-full overflow-hidden bg-black text-white antialiased">
+      <body className="h-full w-full overflow-hidden bg-black text-white antialiased safe-area-pad">
         {children}
       </body>
     </html>

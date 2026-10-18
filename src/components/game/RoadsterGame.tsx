@@ -28,10 +28,14 @@ import { AchievementsModal } from './AchievementsModal';
 import { ChallengesModal } from './ChallengesModal';
 import { SettingsModal } from './SettingsModal';
 import { TutorialOverlay } from './TutorialOverlay';
+import { IntroAnimation } from './IntroAnimation';
 
 export const RoadsterGame: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
+
+  // Intro animation state
+  const [showIntro, setShowIntro] = useState(true);
 
   // Reactive UI State
   const [gameState, setGameState] = useState<GameState>('START');
@@ -48,6 +52,8 @@ export const RoadsterGame: React.FC = () => {
     const initialStats = loadPlayerStats();
     return CAR_SKINS.find((s) => s.id === initialStats.selectedSkinId) || CAR_SKINS[0];
   });
+  const settingsRef = useRef(settings);
+  const selectedSkinRef = useRef(selectedSkin);
 
   // End of run results
   const [lastRunStats, setLastRunStats] = useState<{
@@ -63,16 +69,42 @@ export const RoadsterGame: React.FC = () => {
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
   const [isChallengesOpen, setIsChallengesOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(!stats.tutorialCompleted);
 
-  // Initialize Game Engine on Canvas Mount
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Handle intro completion
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
+  }, []);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
+  useEffect(() => {
+    selectedSkinRef.current = selectedSkin;
+  }, [selectedSkin]);
+
+  // Initialize Game Engine on Canvas Mount (after intro)
+  useEffect(() => {
+    if (showIntro) return;
     if (!canvasRef.current) return;
 
     const engine = new GameEngine(
       canvasRef.current,
-      selectedSkin,
-      settings,
+      selectedSkinRef.current,
+      settingsRef.current,
       {
         onScoreUpdate: (curScore, curDistance, curOrbs) => {
           setScore(curScore);
@@ -95,17 +127,11 @@ export const RoadsterGame: React.FC = () => {
 
     engineRef.current = engine;
 
-    // Show tutorial on very first launch
-    const initialStats = loadPlayerStats();
-    if (!initialStats.tutorialCompleted) {
-      setShowTutorial(true);
-    }
-
     return () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, []);
+  }, [showIntro]);
 
   // Update Engine when Skin Changes
   useEffect(() => {
@@ -121,6 +147,27 @@ export const RoadsterGame: React.FC = () => {
     }
     saveGameSettings(settings);
   }, [settings]);
+
+  // Game Start & Restart Handlers
+  const startGame = useCallback((daily: boolean = false) => {
+    setIsDailyRun(daily);
+    setScore(0);
+    setDistance(0);
+    setOrbs(0);
+    setProgressionUpdate(null);
+
+    const dailySeed = daily ? getDailySeed() : undefined;
+    engineRef.current?.startCountdown(daily, dailySeed);
+  }, []);
+
+  const restartGame = useCallback(() => {
+    setScore(0);
+    setDistance(0);
+    setOrbs(0);
+    setProgressionUpdate(null);
+    const dailySeed = isDailyRun ? getDailySeed() : undefined;
+    engineRef.current?.startRun(isDailyRun, dailySeed);
+  }, [isDailyRun]);
 
   // Handle Controls & Keyboard Bindings
   const handleBoost = useCallback((isTouch: boolean = false) => {
@@ -138,7 +185,7 @@ export const RoadsterGame: React.FC = () => {
     } else if (gameState === 'GAMEOVER') {
       restartGame();
     }
-  }, [gameState, isGarageOpen, isAchievementsOpen, isChallengesOpen, isSettingsOpen, showTutorial]);
+  }, [gameState, isGarageOpen, isAchievementsOpen, isChallengesOpen, isSettingsOpen, showTutorial, startGame, restartGame]);
 
   const handleBoostRelease = useCallback(() => {
     if (gameState === 'PLAYING') {
@@ -163,6 +210,8 @@ export const RoadsterGame: React.FC = () => {
   }, [gameState]);
 
   useEffect(() => {
+    if (showIntro) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
@@ -194,28 +243,7 @@ export const RoadsterGame: React.FC = () => {
       window.removeEventListener('pointerup', handleBoostRelease);
       window.removeEventListener('blur', handleBoostRelease);
     };
-  }, [handleBoost, handleBoostRelease, togglePause, toggleMute]);
-
-  // Game Start & Restart Handlers
-  const startGame = (daily: boolean = false) => {
-    setIsDailyRun(daily);
-    setScore(0);
-    setDistance(0);
-    setOrbs(0);
-    setProgressionUpdate(null);
-
-    const dailySeed = daily ? getDailySeed() : undefined;
-    engineRef.current?.startCountdown(daily, dailySeed);
-  };
-
-  const restartGame = () => {
-    setScore(0);
-    setDistance(0);
-    setOrbs(0);
-    setProgressionUpdate(null);
-    const dailySeed = isDailyRun ? getDailySeed() : undefined;
-    engineRef.current?.startRun(isDailyRun, dailySeed);
-  };
+  }, [showIntro, handleBoost, handleBoostRelease, togglePause, toggleMute]);
 
   const returnHome = () => {
     engineRef.current?.pause();
@@ -241,8 +269,13 @@ export const RoadsterGame: React.FC = () => {
     savePlayerStats(updated);
   };
 
+  // Show intro animation first
+  if (showIntro) {
+    return <IntroAnimation onComplete={handleIntroComplete} />;
+  }
+
   return (
-    <div className="relative w-full h-full min-h-screen bg-black overflow-hidden select-none flex items-center justify-center">
+    <div className="relative w-full h-full min-h-[100dvh] bg-black overflow-hidden select-none flex items-center justify-center">
       {/* 2D / 3D Canvas Game Viewport */}
       <div
         className="relative w-full h-full flex items-center justify-center cursor-pointer"
@@ -251,7 +284,7 @@ export const RoadsterGame: React.FC = () => {
             handleBoost(e.pointerType === 'touch');
           }
         }}
-        onPointerUp={(e) => {
+        onPointerUp={() => {
           if (gameState === 'PLAYING') {
             handleBoostRelease();
           }
@@ -278,6 +311,7 @@ export const RoadsterGame: React.FC = () => {
             onToggleMute={toggleMute}
             onPause={togglePause}
             isDaily={isDailyRun}
+            isMobile={isMobile}
           />
         )}
 
@@ -296,6 +330,7 @@ export const RoadsterGame: React.FC = () => {
             onOpenAchievements={() => setIsAchievementsOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenTutorial={() => setShowTutorial(true)}
+            isMobile={isMobile}
           />
         )}
 
@@ -354,6 +389,27 @@ export const RoadsterGame: React.FC = () => {
             onUpdateSettings={setSettings}
             onClose={() => setIsSettingsOpen(false)}
           />
+        )}
+
+        {/* Mobile Boost Button - Large tap zone at bottom for gameplay */}
+        {isMobile && gameState === 'PLAYING' && (
+          <div
+            className="absolute bottom-0 left-0 right-0 h-[40%] z-[5] pointer-events-auto"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handleBoost(true);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleBoostRelease();
+            }}
+            style={{ touchAction: 'none' }}
+          >
+            {/* Visual hint for touch area */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/30 text-[10px] font-mono tracking-widest pointer-events-none">
+              TAP & HOLD TO BOOST
+            </div>
+          </div>
         )}
       </div>
     </div>

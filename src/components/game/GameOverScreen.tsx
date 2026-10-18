@@ -167,13 +167,13 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md select-none animate-in fade-in duration-300 overflow-y-auto">
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(0,0,0,0.85)] flex flex-col items-center text-center my-auto">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md select-none animate-in fade-in duration-300 overflow-y-auto" style={{ minHeight: '100dvh' }}>
+      <div className="w-full max-w-md bg-slate-900/90 border border-slate-700/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-[0_0_50px_rgba(0,0,0,0.85)] flex flex-col items-center text-center my-auto">
         {/* Status Header */}
         <div className="text-xs font-mono font-bold tracking-widest text-red-400 uppercase mb-1">
           SYSTEM IMPACT • RUN FINISHED
         </div>
-        <h2 className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_15px_rgba(255,0,80,0.6)]">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_15px_rgba(255,0,80,0.6)]">
           FLIGHT SUMMARY
         </h2>
 
@@ -206,37 +206,37 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
         )}
 
         {/* Big Score Display */}
-        <div className="my-5 flex flex-col items-center">
-          <div className="text-xs font-mono text-slate-400 uppercase tracking-widest">Final Score</div>
-          <div className="text-6xl sm:text-7xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-300 to-cyan-500 drop-shadow-[0_0_20px_rgba(0,240,255,0.7)]">
+        <div className="my-3 sm:my-5 flex flex-col items-center">
+          <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-widest">Final Score</div>
+          <div className="text-5xl sm:text-6xl md:text-7xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-300 to-cyan-500 drop-shadow-[0_0_20px_rgba(0,240,255,0.7)]">
             {runStats.score}
           </div>
         </div>
 
         {/* Run Metrics Grid */}
-        <div className="w-full grid grid-cols-3 gap-2.5 mb-5">
-          <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-2.5">
-            <div className="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
-              <Navigation className="w-3 h-3 text-cyan-400" />
-              <span>Distance</span>
+        <div className="w-full grid grid-cols-3 gap-1.5 sm:gap-2.5 mb-3 sm:mb-5">
+          <div className="bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5">
+            <div className="text-[9px] sm:text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+              <Navigation className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-cyan-400" />
+              <span>Dist</span>
             </div>
-            <div className="text-lg font-bold font-mono text-white mt-0.5">{runStats.distance}m</div>
+            <div className="text-base sm:text-lg font-bold font-mono text-white mt-0.5">{runStats.distance}m</div>
           </div>
 
-          <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-2.5">
-            <div className="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-400" />
+          <div className="bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5">
+            <div className="text-[9px] sm:text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
               <span>Orbs</span>
             </div>
-            <div className="text-lg font-bold font-mono text-amber-300 mt-0.5">{runStats.orbs}</div>
+            <div className="text-base sm:text-lg font-bold font-mono text-amber-300 mt-0.5">{runStats.orbs}</div>
           </div>
 
-          <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-2.5">
-            <div className="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
-              <Clock className="w-3 h-3 text-slate-400" />
+          <div className="bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5">
+            <div className="text-[9px] sm:text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+              <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" />
               <span>Time</span>
             </div>
-            <div className="text-lg font-bold font-mono text-slate-300 mt-0.5">{runStats.time}s</div>
+            <div className="text-base sm:text-lg font-bold font-mono text-slate-300 mt-0.5">{runStats.time}s</div>
           </div>
         </div>
 
@@ -246,7 +246,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
             soundManager.playClick();
             onRestart();
           }}
-          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-lg font-mono tracking-wider shadow-[0_0_25px_rgba(0,240,255,0.6)] hover:shadow-[0_0_35px_rgba(0,240,255,0.9)] transition-all active:scale-95 flex items-center justify-center gap-2"
+          className="w-full py-3 sm:py-4 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-base sm:text-lg font-mono tracking-wider shadow-[0_0_25px_rgba(0,240,255,0.6)] hover:shadow-[0_0_35px_rgba(0,240,255,0.9)] transition-all active:scale-95 flex items-center justify-center gap-2"
         >
           <RotateCcw className="w-5 h-5" />
           <span>RESTART FLIGHT</span>
